@@ -13,6 +13,7 @@ import { setupForLobby } from "@/lib/customMap";
 import { supabase } from "@/integrations/supabase/client";
 import { useLobby, type LobbySettings } from "@/hooks/useLobby";
 import { useAuth } from "@/hooks/useAuth";
+import { isRevealed, buildSeats } from "@/lib/reveal";
 import type { Faction } from "@/data/factions";
 
 type PlayerCount = 3 | 4 | 5 | 6 | 7 | 8;
@@ -36,6 +37,7 @@ const GameDay = () => {
   const settings = lobby?.settings as LobbySettings | undefined;
   const picksPerPlayer = settings?.picks_per_player ?? 1;
   const isHost = !!user && lobby?.host_user_id === user.id;
+  const revealed = isRevealed(lobby);
 
   const playerCount = clampCount(settings?.max_players ?? players.length ?? 6);
   const setup = useMemo(() => setupForLobby(lobby?.custom_map ?? null, playerCount), [lobby?.custom_map, playerCount]);
@@ -44,22 +46,7 @@ const GameDay = () => {
     [lobby?.custom_map, setup, playerCount],
   );
   const tileControl = (lobby?.tile_control ?? {}) as Record<string, number>;
-  const seats = useMemo(() => {
-    const m: Record<number, SeatOccupant> = {};
-    for (const p of players) {
-      if (p.seat_index === null || p.seat_index === undefined) continue;
-      const chosen = p.chosen_faction as Faction | null;
-      const assigned = (p.assigned_factions as Faction[] | null) ?? null;
-      const f = chosen ?? (assigned && assigned.length === 1 ? assigned[0] : null);
-      m[p.seat_index] = {
-        playerId: p.id,
-        playerName: p.player_name,
-        factionColor: f?.color ?? null,
-        factionName: f?.name,
-      };
-    }
-    return m;
-  }, [players]);
+  const seats = useMemo(() => buildSeats(players, { revealed, isHost }), [players, revealed, isHost]);
   const totalClaimableTiles = useMemo(
     () => setup.cells.filter((c) => c.role !== "hyperlane").length,
     [setup]
@@ -68,9 +55,10 @@ const GameDay = () => {
   // Auto-start the clock if host enters Game Day without explicitly starting.
   useEffect(() => {
     if (!lobby || !isHost) return;
+    if (!isRevealed(lobby)) return; // never start (and reveal) before game day
     if (lobby.started_at || lobby.status === "completed") return;
     supabase.rpc("start_game", { p_lobby_id: lobby.id });
-  }, [lobby?.id, lobby?.started_at, lobby?.status, isHost]);
+  }, [lobby?.id, lobby?.started_at, lobby?.status, lobby?.game_date, isHost]);
 
   const myPlayer = players.find((p) => p.user_id === user?.id);
   const myFactions = (myPlayer?.assigned_factions as unknown as Faction[]) ?? [];
@@ -223,7 +211,8 @@ const GameDay = () => {
                 All Players
               </h2>
               {players.map((p) => {
-                const chosen = p.chosen_faction as unknown as Faction | null;
+                const actual = p.chosen_faction as unknown as Faction | null;
+                const chosen = revealed || p.id === myPlayer?.id ? actual : null;
                 return (
                   <div key={p.id} className="flex items-center justify-between p-3 rounded bg-secondary/50 border border-border">
                     <div>
@@ -234,8 +223,8 @@ const GameDay = () => {
                         </span>
                       )}
                     </div>
-                    <span className={`text-sm font-body ${chosen ? "text-green-400" : "text-muted-foreground"}`}>
-                      {chosen ? "Ready" : "Choosing..."}
+                    <span className={`text-sm font-body ${actual ? "text-green-400" : "text-muted-foreground"}`}>
+                      {actual ? "Ready" : "Choosing..."}
                     </span>
                   </div>
                 );

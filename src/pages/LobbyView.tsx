@@ -13,6 +13,8 @@ import { getSessionId } from "@/lib/sessionId";
 import { isLocked, formatGameDate } from "@/lib/lobbyLock";
 import LockBanner from "@/components/LockBanner";
 import EditGameDateDialog from "@/components/EditGameDateDialog";
+import { isRevealed, getOptions, formatRevealDate } from "@/lib/reveal";
+import { EyeOff } from "lucide-react";
 import type { Faction } from "@/data/factions";
 
 const LobbyView = () => {
@@ -33,6 +35,7 @@ const LobbyView = () => {
   const isFreeMode = draftMode === "free" || draftMode === "free_no_repeat";
   const isHost = !!user && lobby?.host_user_id === user.id;
   const locked = isLocked(lobby?.game_date);
+  const revealed = isRevealed(lobby);
   const allPicked = players.length >= (settings?.max_players ?? 99) &&
     players.every((p) =>
       isFreeMode ? p.chosen_faction != null : (p.token_picks?.length ?? 0) >= picksPerPlayer
@@ -86,6 +89,7 @@ const LobbyView = () => {
 
   const startGame = async () => {
     if (!lobby) return;
+    if (!revealed && !confirm("Start the game now? This reveals everyone's race and the seating.")) return;
     setStarting(true);
     const { data, error: err } = await supabase.rpc("start_game", { p_lobby_id: lobby.id });
     setStarting(false);
@@ -232,8 +236,11 @@ const LobbyView = () => {
                   ? p.chosen_faction != null
                   : (p.token_picks?.length ?? 0) >= picksPerPlayer;
                 const chosen = p.chosen_faction as unknown as Faction | null;
-                const assigned = p.assigned_factions as unknown as Faction[] | null;
-                const factions: Faction[] | null = isFreeMode && chosen ? [chosen] : assigned;
+                const options = isFreeMode && chosen ? [chosen] : getOptions(p);
+                const isMe = p.id === myPlayer?.id;
+                // Choice is visible to the player themself, and to everyone once revealed.
+                const choiceVisible = revealed || isMe;
+                const hasChoice = options.length > 1 && !!chosen;
                 return (
                   <motion.div
                     key={p.id}
@@ -247,20 +254,40 @@ const LobbyView = () => {
                   >
                     <div>
                       <p className="font-display text-lg text-primary">{p.player_name}</p>
-                      {hasPicked && factions && (
-                        <div className="flex gap-1 mt-1">
-                          {factions.map((f) => (
-                            <span
-                              key={f.name}
-                              className="text-sm font-body px-2 py-0.5 rounded border border-border cursor-pointer hover:opacity-80 transition-opacity"
-                              style={{ background: `hsl(${f.color} / 0.2)` }}
-                              onClick={() => navigate(`/factions?search=${encodeURIComponent(f.name)}`)}
-                              title="View faction details"
-                            >
-                              {f.name}
-                            </span>
-                          ))}
+                      {hasPicked && options.length > 0 && (
+                        <div className="flex gap-1 mt-1 flex-wrap">
+                          {options.map((f) => {
+                            const isChosen = choiceVisible && chosen?.name === f.name;
+                            const dimmed = choiceVisible && hasChoice && !isChosen;
+                            return (
+                              <span
+                                key={f.name}
+                                className={`text-sm font-body px-2 py-0.5 rounded border cursor-pointer hover:opacity-80 transition-opacity ${
+                                  isChosen && options.length > 1 ? "border-primary text-primary" : "border-border"
+                                } ${dimmed ? "opacity-40 line-through" : ""}`}
+                                style={{ background: `hsl(${f.color} / 0.2)` }}
+                                onClick={() => navigate(`/factions?search=${encodeURIComponent(f.name)}`)}
+                                title={isChosen && options.length > 1 ? "Playing this race" : "View faction details"}
+                              >
+                                {f.name}
+                              </span>
+                            );
+                          })}
                         </div>
+                      )}
+                      {hasPicked && options.length > 1 && (
+                        <p className="font-body text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                          {revealed ? (
+                            chosen ? <>Playing <span className="text-primary">{chosen.name}</span></> : "Hasn't chosen yet"
+                          ) : (
+                            <>
+                              <EyeOff className="h-3 w-3" />
+                              {chosen
+                                ? isMe ? `You're playing ${chosen.name} · hidden from others` : "Race chosen · revealed on game day"
+                                : isMe ? "You haven't chosen your race yet" : "Still deciding"}
+                            </>
+                          )}
+                        </p>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
@@ -296,6 +323,8 @@ const LobbyView = () => {
             isHost={isHost}
             playerCount={settings?.max_players ?? 6}
             customMap={lobby.custom_map}
+            revealed={revealed}
+            gameDate={lobby.game_date}
           />
 
           {isHost && (
@@ -361,7 +390,13 @@ const LobbyView = () => {
                 {starting ? "Starting..." : "Start Game"}
               </Button>
             )}
-            {allPicked && (
+            {allPicked && !revealed && lobby?.game_date && (
+              <p className="font-body text-sm text-muted-foreground text-center flex items-center gap-1.5">
+                <EyeOff className="h-3.5 w-3.5" />
+                Races and seating are revealed on game day ({formatRevealDate(lobby.game_date)})
+              </p>
+            )}
+            {allPicked && revealed && (
               <Button
                 onClick={() => navigate(`/lobby/${inviteCode}/gameday`)}
                 size="lg"

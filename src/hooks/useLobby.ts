@@ -147,8 +147,11 @@ export function useLobby(inviteCode: string | undefined) {
     const draftMode = settings?.draft_mode ?? "token";
     const isFreeMode = draftMode === "free" || draftMode === "free_no_repeat";
     const picksPerPlayer = settings?.picks_per_player ?? 1;
+    // Missing tokens, or drafted options but no race chosen -> auto-pick at lock.
     const incomplete = players.some((p) =>
-      isFreeMode ? !p.chosen_faction : (p.token_picks?.length ?? 0) < picksPerPlayer
+      isFreeMode
+        ? !p.chosen_faction
+        : (p.token_picks?.length ?? 0) < picksPerPlayer || !p.chosen_faction
     );
     if (!incomplete) return;
     autoAssignedRef.current = true;

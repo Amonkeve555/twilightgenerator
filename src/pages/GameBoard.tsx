@@ -13,6 +13,7 @@ import { setupForLobby } from "@/lib/customMap";
 import { useLobby } from "@/hooks/useLobby";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { isRevealed, buildSeats } from "@/lib/reveal";
 import type { Faction } from "@/data/factions";
 
 type PlayerCount = 3 | 4 | 5 | 6 | 7 | 8;
@@ -46,22 +47,16 @@ const GameBoard = () => {
   );
   const tileControl = (lobby?.tile_control ?? {}) as Record<string, number>;
 
-  const seats = useMemo(() => {
-    const m: Record<number, SeatOccupant> = {};
-    for (const p of players) {
-      if (p.seat_index === null || p.seat_index === undefined) continue;
-      const chosen = p.chosen_faction as Faction | null;
-      const assigned = (p.assigned_factions as Faction[] | null) ?? null;
-      const f = chosen ?? (assigned && assigned.length === 1 ? assigned[0] : null);
-      m[p.seat_index] = {
-        playerId: p.id,
-        playerName: p.player_name,
-        factionColor: f?.color ?? null,
-        factionName: f?.name,
-      };
-    }
-    return m;
-  }, [players]);
+  const revealed = isRevealed(lobby);
+  const seats = useMemo(() => buildSeats(players, { revealed, isHost }), [players, revealed, isHost]);
+  // Before game day, hide chosen races (and seats, for non-hosts) from the leaderboard too.
+  const visiblePlayers = useMemo(
+    () =>
+      revealed
+        ? players
+        : players.map((p) => ({ ...p, chosen_faction: null, seat_index: isHost ? p.seat_index : null })),
+    [players, revealed, isHost]
+  );
 
   const seatIndices = useMemo(
     () =>
@@ -127,6 +122,7 @@ const GameBoard = () => {
 
   const onStartGame = async () => {
     if (!isHost || !lobby || lobby.started_at) return;
+    if (!revealed && !confirm("Start the game now? This reveals everyone's race and the seating.")) return;
     setBusy(true);
     const { data, error: err } = await supabase.rpc("start_game", { p_lobby_id: lobby.id });
     setBusy(false);
@@ -329,7 +325,7 @@ const GameBoard = () => {
             className="space-y-4"
           >
             <TileControlLeaderboard
-              players={players}
+              players={visiblePlayers}
               tileControl={tileControl}
               totalClaimableTiles={totalClaimableTiles}
             />

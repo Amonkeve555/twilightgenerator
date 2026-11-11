@@ -16,6 +16,8 @@ import { useProfile } from "@/hooks/useProfile";
 import { getLastPlayedFactionVsOpponents } from "@/lib/lastPlayedFaction";
 import { isLocked, formatGameDate } from "@/lib/lobbyLock";
 import LockBanner from "@/components/LockBanner";
+import { isRevealed, formatRevealDate } from "@/lib/reveal";
+import { Check, EyeOff } from "lucide-react";
 import type { Faction } from "@/data/factions";
 
 type JoinPhase = "intro" | "pick" | "done";
@@ -46,6 +48,8 @@ const JoinLobby = () => {
   const isFreeMode = draftMode === "free" || draftMode === "free_no_repeat";
   const isNoRepeat = draftMode === "free_no_repeat" || draftMode === "token_no_repeat";
   const locked = isLocked(lobby?.game_date);
+  const revealed = isRevealed(lobby);
+  const [choosing, setChoosing] = useState<string | null>(null);
 
   const takenTokens = useMemo(() => {
     const map = new Map<number, number>();
@@ -203,7 +207,16 @@ const JoinLobby = () => {
         setAssignedFactions((prev) => [...prev, result.faction as Faction]);
         setRevealedFaction(result.faction as Faction);
       }
-      if (newPicks.length >= picksPerPlayer) setPhase("done");
+      if (newPicks.length >= picksPerPlayer) {
+        // With a single pick there is nothing to choose between — lock it in.
+        if (picksPerPlayer === 1 && result.faction) {
+          await supabase
+            .from("lobby_players")
+            .update({ chosen_faction: JSON.parse(JSON.stringify(result.faction)) })
+            .eq("id", playerId);
+        }
+        setPhase("done");
+      }
     },
     [lobby, tokenPicks, playerId, picksPerPlayer, forbiddenTokens]
   );
@@ -242,6 +255,29 @@ const JoinLobby = () => {
       setPhase("done");
     },
     [lobby, playerId, pendingFaction]
+  );
+
+  const chooseFaction = useCallback(
+    async (faction: Faction) => {
+      if (!playerId || choosing) return;
+      if (locked && existingPlayer?.chosen_faction) {
+        toast.error("Picks are locked — your race is final");
+        return;
+      }
+      setChoosing(faction.name);
+      const { error: err } = await supabase
+        .from("lobby_players")
+        .update({ chosen_faction: JSON.parse(JSON.stringify(faction)) })
+        .eq("id", playerId);
+      setChoosing(null);
+      if (err) {
+        toast.error("Failed to save your choice");
+        console.error(err);
+        return;
+      }
+      toast.success(`You'll play ${faction.name}`);
+    },
+    [playerId, choosing, locked, existingPlayer?.chosen_faction]
   );
 
   const changePick = useCallback(async () => {
@@ -404,7 +440,7 @@ const JoinLobby = () => {
         {effectivePhase === "done" && existingPlayer && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
             <h2 className="font-display text-base uppercase tracking-[0.3em] text-primary text-glow text-center">
-              Your Assigned Factions
+              {assignedFactions.length > 1 ? "Your Drafted Races" : "Your Race"}
             </h2>
             <div className="imperial-divider w-32 mx-auto" />
             <div className="grid gap-3">
@@ -412,11 +448,68 @@ const JoinLobby = () => {
                 <FactionCard key={f.name} playerName={playerName} faction={f} index={i} />
               ))}
             </div>
-            {picksPerPlayer > 1 && (
-              <p className="text-center font-body text-base text-muted-foreground">
-                You'll choose which faction to play on game day
-              </p>
-            )}
+
+            {assignedFactions.length > 1 && (() => {
+              const chosenName = (existingPlayer?.chosen_faction as Faction | null)?.name ?? null;
+              const revealLabel = formatRevealDate(lobby?.game_date);
+              const choiceLocked = locked && !!chosenName;
+              return (
+                <div className="glass imperial-border rounded p-4 space-y-3">
+                  <p className="font-display text-xs uppercase tracking-[0.2em] text-primary text-center">
+                    Which race will you play?
+                  </p>
+                  <p className="text-center font-body text-xs text-muted-foreground flex items-center justify-center gap-1.5">
+                    <EyeOff className="h-3 w-3" />
+                    {choiceLocked
+                      ? revealed
+                        ? "Revealed — it's game day."
+                        : `Locked in. Revealed to everyone on game day${revealLabel ? ` (${revealLabel})` : ""}.`
+                      : `Others see all your options, but your choice stays secret until game day${revealLabel ? ` (${revealLabel})` : ""}.`}
+                  </p>
+                  <div className="grid gap-2">
+                    {assignedFactions.map((f) => {
+                      const selected = chosenName === f.name;
+                      return (
+                        <button
+                          key={f.name}
+                          type="button"
+                          onClick={() => chooseFaction(f)}
+                          disabled={choiceLocked || !!choosing}
+                          aria-pressed={selected}
+                          className={`w-full flex items-center gap-3 p-3 rounded border text-left transition-all disabled:cursor-not-allowed ${
+                            selected
+                              ? "border-primary bg-primary/10 glow-primary"
+                              : "border-border bg-secondary/40 hover:border-primary/50"
+                          } ${choiceLocked && !selected ? "opacity-50" : ""}`}
+                        >
+                          <span
+                            className="w-8 h-8 rounded-sm border border-border flex-shrink-0"
+                            style={{ background: `linear-gradient(135deg, hsl(${f.color}) 0%, hsl(${f.color} / 0.4) 100%)` }}
+                          />
+                          <span className="flex-1 font-display text-sm uppercase tracking-[0.1em] text-primary">
+                            {f.name}
+                          </span>
+                          {choosing === f.name ? (
+                            <span className="font-body text-xs text-muted-foreground">Saving…</span>
+                          ) : selected ? (
+                            <span className="flex items-center gap-1 font-body text-xs text-primary">
+                              <Check className="h-4 w-4" /> Playing
+                            </span>
+                          ) : null}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {!chosenName && (
+                    <p className="text-center font-body text-xs text-amber-400">
+                      {locked
+                        ? "Not chosen — a race is being picked for you at random."
+                        : "Not chosen yet — if you don't choose before picks lock, one is picked for you at random."}
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
 
             {playerId && assignedFactions[0] && (
               <div className="glass imperial-border rounded p-4 space-y-3">

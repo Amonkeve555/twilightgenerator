@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Shuffle, Eraser, ChevronDown, ChevronUp, Armchair } from "lucide-react";
+import { Shuffle, Eraser, ChevronDown, ChevronUp, Armchair, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +13,7 @@ import { MAP_SETUPS, getHomeSeats, getHomeSeatsFromSetup } from "@/data/mapSetup
 import { setupForLobby, type CustomMap } from "@/lib/customMap";
 import { supabase } from "@/integrations/supabase/client";
 import type { LobbyPlayerRow } from "@/hooks/useLobby";
-import type { Faction } from "@/data/factions";
+import { buildSeats, formatRevealDate } from "@/lib/reveal";
 
 type PlayerCount = 3 | 4 | 5 | 6 | 7 | 8;
 
@@ -25,6 +25,9 @@ interface Props {
   playerCount: number;
   /** Optional custom map override */
   customMap?: CustomMap | null;
+  /** Game day reached / game started — seating is public */
+  revealed: boolean;
+  gameDate?: string | null;
 }
 
 function clampCount(n: number): PlayerCount {
@@ -33,7 +36,7 @@ function clampCount(n: number): PlayerCount {
   return n as PlayerCount;
 }
 
-const SeatingPanel = ({ lobbyId, players, isHost, playerCount, customMap }: Props) => {
+const SeatingPanel = ({ lobbyId, players, isHost, playerCount, customMap, revealed, gameDate }: Props) => {
   const [open, setOpen] = useState(true);
   const [busy, setBusy] = useState(false);
   const [activeSeat, setActiveSeat] = useState<number | null>(null);
@@ -45,24 +48,10 @@ const SeatingPanel = ({ lobbyId, players, isHost, playerCount, customMap }: Prop
     [customMap, setup, count],
   );
 
-  // Build seat -> occupant map from players
-  const seats = useMemo(() => {
-    const m: Record<number, SeatOccupant> = {};
-    for (const p of players) {
-      const sp = p as LobbyPlayerRow & { seat_index?: number | null };
-      if (sp.seat_index === null || sp.seat_index === undefined) continue;
-      const chosen = p.chosen_faction as Faction | null;
-      const assigned = (p.assigned_factions as Faction[] | null) ?? null;
-      const f = chosen ?? (assigned && assigned.length === 1 ? assigned[0] : null);
-      m[sp.seat_index] = {
-        playerId: p.id,
-        playerName: p.player_name,
-        factionColor: f?.color ?? null,
-        factionName: f?.name,
-      };
-    }
-    return m;
-  }, [players]);
+  // Seat -> occupant map. Empty for non-hosts until the game-day reveal.
+  const seats = useMemo(() => buildSeats(players, { revealed, isHost }), [players, revealed, isHost]);
+  const hiddenFromMe = !revealed && !isHost;
+  const revealLabel = formatRevealDate(gameDate);
 
   const unseatedPlayers = useMemo(
     () =>
@@ -140,7 +129,7 @@ const SeatingPanel = ({ lobbyId, players, isHost, playerCount, customMap }: Prop
             Table Seating
           </h2>
           <span className="font-body text-xs text-muted-foreground">
-            {seatedCount}/{count} seated
+            {hiddenFromMe ? "secret" : `${seatedCount}/${count} seated`}
           </span>
         </div>
         {open ? (
@@ -152,7 +141,15 @@ const SeatingPanel = ({ lobbyId, players, isHost, playerCount, customMap }: Prop
 
       {open && (
         <>
-          <div className="rounded bg-secondary/30 p-2 md:p-3">
+          {!revealed && (
+            <p className="font-body text-xs text-amber-400/90 text-center flex items-center justify-center gap-1.5">
+              <EyeOff className="h-3 w-3" />
+              {isHost
+                ? `Only you can see the seating. Everyone sees it on game day${revealLabel ? ` (${revealLabel})` : ""}.`
+                : `Seating is revealed on game day${revealLabel ? ` (${revealLabel})` : ""}.`}
+            </p>
+          )}
+          <div className={`rounded bg-secondary/30 p-2 md:p-3 ${hiddenFromMe ? "opacity-60" : ""}`}>
             <MapSetupHex
               setup={setup}
               seats={seats}
