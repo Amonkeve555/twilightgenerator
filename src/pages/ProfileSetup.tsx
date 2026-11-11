@@ -5,7 +5,6 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import StarField from "@/components/StarField";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
@@ -63,7 +62,6 @@ const ProfileSetup = () => {
   if (authLoading || profileLoading) {
     return (
       <div className="min-h-screen relative">
-        <StarField />
         <div className="relative z-10 flex items-center justify-center min-h-screen">
           <p className="font-display text-primary text-glow">Loading...</p>
         </div>
@@ -73,7 +71,6 @@ const ProfileSetup = () => {
 
   return (
     <div className="min-h-screen relative">
-      <StarField />
       <ClaimGuestDataDialog />
       <div className="relative z-10 max-w-md mx-auto px-4 py-12">
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">

@@ -96,5 +96,138 @@
   .imperial-divider {
     height: 1px;
     background: linear-gradient(90deg, transparent, hsl(var(--gold-dark) / 0.5), hsl(var(--gold-light) / 0.3), hsl(var(--gold-dark) / 0.5), transparent);
+    background-size: 200% 100%;
+    animation: divider-flow 6s linear infinite;
   }
+
+  /* ---------- "Alive" layer ---------- */
+
+  /* Drifting nebula clouds behind the star canvas */
+  .nebula {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(60px);
+    will-change: transform, opacity;
+  }
+  .nebula-a {
+    width: 55vmax; height: 40vmax; left: -12vmax; top: 5vmax;
+    background: radial-gradient(closest-side, hsl(265 55% 28% / 0.35), transparent);
+    animation: nebula-drift-a 38s ease-in-out infinite alternate;
+  }
+  .nebula-b {
+    width: 50vmax; height: 50vmax; right: -15vmax; bottom: -15vmax;
+    background: radial-gradient(closest-side, hsl(225 60% 22% / 0.4), transparent);
+    animation: nebula-drift-b 46s ease-in-out infinite alternate;
+  }
+  .nebula-c {
+    width: 60vmax; height: 22vmax; left: 20vmax; top: -8vmax;
+    background: radial-gradient(closest-side, hsl(42 60% 25% / 0.18), transparent);
+    animation: nebula-drift-c 30s ease-in-out infinite alternate;
+  }
+
+  /* Animated gold gradient text for headings */
+  .gold-shimmer {
+    background: linear-gradient(100deg,
+      hsl(var(--gold-dark)) 0%, hsl(var(--primary)) 25%, hsl(var(--gold-light)) 45%,
+      hsl(45 100% 92%) 50%, hsl(var(--gold-light)) 55%, hsl(var(--primary)) 75%, hsl(var(--gold-dark)) 100%);
+    background-size: 250% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: shimmer-text 7s ease-in-out infinite;
+  }
+
+  /* Light sweep across a button/card on hover */
+  .sheen {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .sheen::after {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    background: linear-gradient(115deg, transparent 35%, hsl(var(--gold-light) / 0.28) 50%, transparent 65%);
+    transform: translateX(-120%);
+    transition: transform 0.7s ease;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .sheen:hover::after { transform: translateX(120%); }
+
+  /* Slow breathing glow for the main call-to-action */
+  .glow-breathe { animation: glow-breathe 3.2s ease-in-out infinite; }
+
+  /* Interactive glass cards: lift + gold rim on hover */
+  .card-lift {
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  }
+  .card-lift:hover {
+    transform: translateY(-2px);
+    border-color: hsl(var(--primary) / 0.45);
+    box-shadow: 0 10px 30px -12px hsl(var(--glow-primary) / 0.35), inset 0 1px 0 hsl(var(--gold-light) / 0.12);
+  }
+
+  /* Pulsing "live" dot */
+  .live-dot {
+    position: relative;
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 9999px;
+    background: hsl(140 70% 50%);
+    box-shadow: 0 0 8px hsl(140 70% 50% / 0.8);
+  }
+  .live-dot::after {
+    content: "";
+    position: absolute; inset: 0;
+    border-radius: inherit;
+    background: inherit;
+    animation: live-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+  .live-dot.live-dot-gold { background: hsl(var(--primary)); box-shadow: 0 0 8px hsl(var(--primary) / 0.8); }
+
+  /* Emblem: gentle float with a pulsing halo */
+  .emblem-float { animation: emblem-float 6s ease-in-out infinite; }
+  .emblem-halo {
+    position: absolute; inset: -30%;
+    border-radius: 9999px;
+    background: radial-gradient(closest-side, hsl(var(--primary) / 0.28), transparent 70%);
+    animation: halo-pulse 4s ease-in-out infinite;
+    pointer-events: none;
+  }
+  .orbit-ring {
+    position: absolute; inset: -18%;
+    border-radius: 9999px;
+    border: 1px dashed hsl(var(--primary) / 0.25);
+    animation: spin-slow 40s linear infinite;
+    pointer-events: none;
+  }
+}
+
+@keyframes token-idle {
+  0%, 100% { border-color: hsl(var(--border)); box-shadow: none; }
+  50% { border-color: hsl(var(--primary) / 0.35); box-shadow: 0 0 10px -2px hsl(var(--glow-primary) / 0.25); }
+}
+.token-idle:not(:hover) { animation: token-idle 4s ease-in-out infinite; }
+.faction-bar { animation: divider-flow 4s linear infinite; }
+.gold-bar-live { animation: divider-flow 2.5s linear infinite; }
+@keyframes divider-flow { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@keyframes shimmer-text { 0%, 100% { background-position: 100% 0; } 50% { background-position: 0% 0; } }
+@keyframes nebula-drift-a { from { transform: translate(0, 0) scale(1); opacity: 0.8; } to { transform: translate(8vmax, 4vmax) scale(1.15); opacity: 1; } }
+@keyframes nebula-drift-b { from { transform: translate(0, 0) scale(1.1); opacity: 1; } to { transform: translate(-6vmax, -5vmax) scale(0.95); opacity: 0.7; } }
+@keyframes nebula-drift-c { from { transform: translate(0, 0); opacity: 0.6; } to { transform: translate(-10vmax, 3vmax); opacity: 1; } }
+@keyframes glow-breathe {
+  0%, 100% { box-shadow: 0 0 12px hsl(var(--glow-primary) / 0.3), 0 0 36px hsl(var(--glow-primary) / 0.08); }
+  50% { box-shadow: 0 0 22px hsl(var(--glow-primary) / 0.55), 0 0 60px hsl(var(--glow-primary) / 0.2); }
+}
+@keyframes live-ping { 75%, 100% { transform: scale(2.6); opacity: 0; } }
+@keyframes emblem-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes halo-pulse { 0%, 100% { opacity: 0.55; transform: scale(0.95); } 50% { opacity: 1; transform: scale(1.08); } }
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .nebula, .gold-shimmer, .imperial-divider, .glow-breathe, .live-dot::after,
+  .emblem-float, .emblem-halo, .orbit-ring, .token-idle, .faction-bar, .gold-bar-live { animation: none !important; }
+  .sheen::after { display: none; }
+  .card-lift:hover { transform: none; }
 }

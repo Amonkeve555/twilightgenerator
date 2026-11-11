@@ -5,7 +5,6 @@ import RulesSourcesPanel from "@/components/admin/RulesSourcesPanel";
 import FactionDataPanel from "@/components/admin/FactionDataPanel";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import StarField from "@/components/StarField";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -196,7 +195,6 @@ const Admin = () => {
   if (roleLoading || !isAdmin) {
     return (
       <div className="min-h-screen relative">
-        <StarField />
         <div className="relative z-10 p-12 text-center font-display text-sm uppercase tracking-[0.15em] text-muted-foreground">
           Checking access…
         </div>
@@ -206,7 +204,6 @@ const Admin = () => {
 
   return (
     <div className="min-h-screen relative">
-      <StarField />
       <div className="relative z-10 max-w-5xl mx-auto px-4 py-12">
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
           <Button

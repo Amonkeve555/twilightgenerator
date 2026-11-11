@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import StarField from "@/components/StarField";
 
 const POST_AUTH_PATH_KEY = "ti4_post_auth_path";
 
@@ -36,7 +35,6 @@ const AuthCallback = () => {
 
   return (
     <div className="min-h-screen relative">
-      <StarField />
       <div className="relative z-10 flex min-h-screen items-center justify-center px-4">
         <p className="font-display text-primary text-glow">{message}</p>
       </div>

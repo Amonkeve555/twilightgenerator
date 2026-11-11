@@ -5,7 +5,6 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import StarField from "@/components/StarField";
 import { TI4_FACTIONS, POK_FACTIONS, GENERIC_TECH, UNIT_REFERENCE, type Faction, type FactionTech } from "@/data/factions";
 import { useMergedFactions } from "@/hooks/useMergedFactions";
 import TechTree from "@/components/TechTree";
@@ -257,7 +256,6 @@ const FactionGuide = () => {
 
   return (
     <div className="min-h-screen relative">
-      <StarField />
       <div className="relative z-10 max-w-2xl mx-auto px-4 py-12">
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
           <h1 className="font-display text-3xl md:text-4xl font-black tracking-[0.15em] text-primary text-glow mb-2">

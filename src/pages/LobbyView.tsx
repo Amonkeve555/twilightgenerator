@@ -1,10 +1,9 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Copy, Check, Users, Clock, ArrowLeft, Trash2, UserMinus, RotateCcw, Map as MapIcon, Pencil, CalendarPlus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import StarField from "@/components/StarField";
 import SeatingPanel from "@/components/SeatingPanel";
 import GameTimer from "@/components/GameTimer";
 import { supabase } from "@/integrations/supabase/client";
@@ -106,7 +105,6 @@ const LobbyView = () => {
   if (loading) {
     return (
       <div className="min-h-screen relative">
-        <StarField />
         <div className="relative z-10 flex items-center justify-center min-h-screen">
           <p className="font-display text-primary text-glow">Loading...</p>
         </div>
@@ -117,7 +115,6 @@ const LobbyView = () => {
   if (error || !lobby) {
     return (
       <div className="min-h-screen relative">
-        <StarField />
         <div className="relative z-10 flex flex-col items-center justify-center min-h-screen gap-4">
           <p className="font-display text-destructive">{error || "Lobby not found"}</p>
           <Button variant="outline" onClick={() => navigate("/")} className="font-display text-xs uppercase tracking-[0.15em] border-border text-muted-foreground hover:text-primary hover:border-primary/40">
@@ -137,7 +134,6 @@ const LobbyView = () => {
 
   return (
     <div className="min-h-screen relative">
-      <StarField />
       <div className="relative z-10 max-w-2xl mx-auto px-4 py-12">
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
           <h1 className="font-display text-3xl md:text-4xl font-black tracking-[0.15em] text-primary text-glow mb-2">
@@ -208,6 +204,16 @@ const LobbyView = () => {
                 </>
               )}
             </div>
+            {/* Fills up as players join; shimmers while the table is still filling */}
+            <div className="mt-3 h-1.5 rounded-full bg-secondary/70 overflow-hidden">
+              <motion.div
+                className={`h-full rounded-full ${players.length < (settings?.max_players ?? 0) ? "gold-bar-live" : ""}`}
+                style={{ background: "linear-gradient(90deg, hsl(var(--gold-dark)), hsl(var(--primary)), hsl(var(--gold-light)))", backgroundSize: "200% 100%" }}
+                initial={{ width: 0 }}
+                animate={{ width: `${Math.min(100, (players.length / Math.max(1, settings?.max_players ?? 1)) * 100)}%` }}
+                transition={{ type: "spring", stiffness: 80, damping: 18 }}
+              />
+            </div>
           </div>
 
           <div className="glass imperial-border rounded p-6 space-y-3">
@@ -215,11 +221,13 @@ const LobbyView = () => {
               Players
             </h2>
             {players.length === 0 ? (
-              <p className="text-center font-body text-sm text-muted-foreground">
+              <p className="text-center font-body text-sm text-muted-foreground flex items-center justify-center gap-2">
+                <span className="live-dot live-dot-gold" aria-hidden="true" />
                 Waiting for players to join...
               </p>
             ) : (
-              players.map((p) => {
+              <AnimatePresence initial={false}>
+              {players.map((p, i) => {
                 const hasPicked = isFreeMode
                   ? p.chosen_faction != null
                   : (p.token_picks?.length ?? 0) >= picksPerPlayer;
@@ -227,7 +235,16 @@ const LobbyView = () => {
                 const assigned = p.assigned_factions as unknown as Faction[] | null;
                 const factions: Faction[] | null = isFreeMode && chosen ? [chosen] : assigned;
                 return (
-                  <div key={p.id} className="flex items-center justify-between p-3 rounded bg-secondary/50 border border-border">
+                  <motion.div
+                    key={p.id}
+                    layout
+                    initial={{ opacity: 0, x: -24, scale: 0.97 }}
+                    animate={{ opacity: 1, x: 0, scale: 1 }}
+                    exit={{ opacity: 0, x: 24, height: 0, marginTop: 0, paddingTop: 0, paddingBottom: 0 }}
+                    transition={{ type: "spring", stiffness: 220, damping: 24, delay: i * 0.04 }}
+                    className="flex items-center justify-between p-3 rounded bg-secondary/50 border border-border card-lift"
+                    style={p.display_color ? { boxShadow: `inset 3px 0 0 hsl(${p.display_color})` } : undefined}
+                  >
                     <div>
                       <p className="font-display text-lg text-primary">{p.player_name}</p>
                       {hasPicked && factions && (
@@ -248,7 +265,9 @@ const LobbyView = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       {hasPicked ? (
-                        <Check className="h-4 w-4 text-green-400" />
+                        <motion.span initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: "spring", stiffness: 300, damping: 14 }}>
+                          <Check className="h-4 w-4 text-green-400 drop-shadow-[0_0_6px_hsl(140_70%_50%/0.7)]" />
+                        </motion.span>
                       ) : (
                         <Clock className="h-4 w-4 text-muted-foreground animate-pulse" />
                       )}
@@ -264,9 +283,10 @@ const LobbyView = () => {
                         </Button>
                       )}
                     </div>
-                  </div>
+                  </motion.div>
                 );
-              })
+              })}
+              </AnimatePresence>
             )}
           </div>
 

@@ -5,7 +5,6 @@ import { ArrowLeft, Save, Trash2, Pencil, FolderOpen } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import StarField from "@/components/StarField";
 import MapSetupHex from "@/components/MapSetupHex";
 import { useAuth } from "@/hooks/useAuth";
 import { MAP_SETUPS, type HexRole, type MapSetup } from "@/data/mapSetups";
@@ -176,7 +175,6 @@ const MapTemplatesPage = () => {
 
   return (
     <div className="min-h-screen relative">
-      <StarField />
       <div className="relative z-10 max-w-5xl mx-auto px-4 py-8">
         <Button
           variant="ghost"

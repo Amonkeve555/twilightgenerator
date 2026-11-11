@@ -1,10 +1,9 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { RotateCcw, Scroll, Users, Gamepad2, BookOpen, Bot, BarChart3, Clock, Check, Trophy, Shield, Hexagon } from "lucide-react";
+import { RotateCcw, Scroll, Users, Gamepad2, BookOpen, Bot, BarChart3, Trophy, Shield, Hexagon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import tiEmblem from "@/assets/ti-emblem.png";
 import { Button } from "@/components/ui/button";
-import StarField from "@/components/StarField";
 import PlayerSetup from "@/components/PlayerSetup";
 import FactionPool from "@/components/FactionPool";
 import TokenGrid from "@/components/TokenGrid";
@@ -239,7 +238,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen relative">
-      <StarField />
       <ClaimGuestDataDialog />
       <div className="relative z-10 max-w-2xl mx-auto px-4 py-12">
         <div className="flex justify-end mb-4">
@@ -251,13 +249,20 @@ const Index = () => {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-10"
         >
-          <img
-            src={tiEmblem}
-            alt="Twilight Imperium Emblem"
-            className="w-24 h-24 md:w-28 md:h-28 mx-auto mb-4 drop-shadow-[0_0_15px_hsl(42_85%_55%/0.3)]"
-          />
+          <div className="relative w-24 h-24 md:w-28 md:h-28 mx-auto mb-5">
+            <div className="emblem-halo" />
+            <div className="orbit-ring" />
+            <motion.img
+              src={tiEmblem}
+              alt="Twilight Imperium Emblem"
+              initial={{ scale: 0.6, rotate: -20, opacity: 0 }}
+              animate={{ scale: 1, rotate: 0, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 120, damping: 14, delay: 0.1 }}
+              className="relative w-full h-full emblem-float drop-shadow-[0_0_15px_hsl(42_85%_55%/0.3)]"
+            />
+          </div>
           <div className="imperial-divider w-48 mx-auto mb-4" />
-          <h1 className="font-display text-3xl md:text-4xl font-black tracking-[0.15em] text-primary text-glow mb-2">
+          <h1 className="font-display text-3xl md:text-4xl font-black tracking-[0.15em] gold-shimmer mb-2 drop-shadow-[0_0_12px_hsl(42_85%_55%/0.35)]">
             Twilight Imperium
           </h1>
           <p className="font-display text-xs uppercase tracking-[0.4em] text-muted-foreground">
@@ -279,7 +284,7 @@ const Index = () => {
                 <Button
                   onClick={() => setPhase("setup")}
                   size="lg"
-                  className="font-display text-sm uppercase tracking-[0.2em] glow-primary px-8 py-6 bg-primary text-primary-foreground hover:bg-primary/90"
+                  className="font-display text-sm uppercase tracking-[0.2em] glow-breathe px-8 py-6 bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   Create Local Game
                 </Button>
@@ -306,26 +311,29 @@ const Index = () => {
                     <p className="font-body text-sm text-muted-foreground">No active lobbies. Create one to get started!</p>
                   </div>
                 ) : (
-                  <div className="glass imperial-border rounded overflow-hidden">
+                  <div className="glass imperial-border rounded overflow-x-auto">
                     <table className="w-full">
                       <thead>
                         <tr className="border-b border-border">
-                          <th className="font-display text-xs uppercase tracking-[0.15em] text-muted-foreground text-left px-4 py-3">Game</th>
-                          <th className="font-display text-xs uppercase tracking-[0.15em] text-muted-foreground text-left px-4 py-3">When</th>
-                          <th className="font-display text-xs uppercase tracking-[0.15em] text-muted-foreground text-center px-4 py-3">Players</th>
-                          <th className="font-display text-xs uppercase tracking-[0.15em] text-muted-foreground text-center px-4 py-3">Status</th>
-                          <th className="font-display text-xs uppercase tracking-[0.15em] text-muted-foreground text-right px-4 py-3">Role</th>
+                          <th className="font-display text-xs uppercase tracking-[0.15em] text-muted-foreground text-left px-3 sm:px-4 py-3">Game</th>
+                          <th className="font-display text-xs uppercase tracking-[0.15em] text-muted-foreground text-left px-3 sm:px-4 py-3">When</th>
+                          <th className="font-display text-xs uppercase tracking-[0.15em] text-muted-foreground text-center px-2 sm:px-4 py-3">Players</th>
+                          <th className="font-display text-xs uppercase tracking-[0.15em] text-muted-foreground text-center px-2 sm:px-4 py-3"><span className="hidden sm:inline">Status</span></th>
+                          <th className="hidden sm:table-cell font-display text-xs uppercase tracking-[0.15em] text-muted-foreground text-right px-4 py-3">Role</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {activeLobbies.map((l) => (
-                          <tr
+                        {activeLobbies.map((l, i) => (
+                          <motion.tr
                             key={l.id}
+                            initial={{ opacity: 0, x: -12 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.15 + i * 0.06, duration: 0.35 }}
                             onClick={() => navigate(`/lobby/${l.invite_code}`)}
-                            className="border-b border-border/50 last:border-0 hover:bg-primary/5 cursor-pointer transition-colors"
+                            className="group border-b border-border/50 last:border-0 hover:bg-primary/[0.07] cursor-pointer transition-colors"
                           >
                             <td className="px-4 py-3">
-                              <p className="font-display text-sm text-primary">{l.host_name}'s game</p>
+                              <p className="font-display text-sm text-primary group-hover:text-glow transition-[text-shadow]">{l.host_name}'s game</p>
                               <code className="font-body text-xs text-muted-foreground">{l.invite_code}</code>
                             </td>
                             <td className="px-4 py-3">
@@ -355,20 +363,17 @@ const Index = () => {
                             </td>
                             <td className="px-4 py-3 text-center">
                               <span className="inline-flex items-center gap-1.5 font-body text-sm text-muted-foreground">
-                                {l.status === "ready" ? (
-                                  <Check className="h-3.5 w-3.5 text-green-400" />
-                                ) : (
-                                  <Clock className="h-3.5 w-3.5 text-muted-foreground animate-pulse" />
-                                )}
-                                {l.status === "ready" ? "Ready" : "Waiting"}
+                                <span className={l.status === "ready" ? "live-dot" : "live-dot live-dot-gold"} aria-hidden="true" />
+                                <span className="hidden sm:inline">{l.status === "ready" ? "Ready" : "Waiting"}</span>
+                                <span className="sr-only sm:hidden">{l.status === "ready" ? "Ready" : "Waiting"}</span>
                               </span>
                             </td>
-                            <td className="px-4 py-3 text-right">
+                            <td className="hidden sm:table-cell px-4 py-3 text-right">
                               <span className="text-xs font-body uppercase tracking-wider px-2 py-0.5 rounded border border-border text-muted-foreground">
                                 {l.role}
                               </span>
                             </td>
-                          </tr>
+                          </motion.tr>
                         ))}
                       </tbody>
                     </table>
@@ -379,7 +384,12 @@ const Index = () => {
               {/* Navigation Links */}
               <div className="w-full mt-4">
                 <div className="imperial-divider w-32 mx-auto mb-4" />
-                <div className="grid grid-cols-2 gap-3">
+                <motion.div
+                  className="grid grid-cols-2 gap-3 [&>*]:card-lift"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2, duration: 0.4 }}
+                >
                   <Button
                     variant="outline"
                     size="sm"
@@ -436,7 +446,7 @@ const Index = () => {
                       User Administration
                     </Button>
                   )}
-                </div>
+                </motion.div>
               </div>
             </motion.div>
           )}

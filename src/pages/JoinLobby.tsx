@@ -3,7 +3,6 @@ import { toast } from "sonner";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import StarField from "@/components/StarField";
 import TokenGrid from "@/components/TokenGrid";
 import FactionCard from "@/components/FactionCard";
 import FactionPicker from "@/components/FactionPicker";
@@ -281,7 +280,6 @@ const JoinLobby = () => {
   if (loading) {
     return (
       <div className="min-h-screen relative">
-        <StarField />
         <div className="relative z-10 flex items-center justify-center min-h-screen">
           <p className="font-display text-primary text-glow">Loading...</p>
         </div>
@@ -292,7 +290,6 @@ const JoinLobby = () => {
   if (error || !lobby) {
     return (
       <div className="min-h-screen relative">
-        <StarField />
         <div className="relative z-10 flex flex-col items-center justify-center min-h-screen gap-4">
           <p className="font-display text-destructive">{error || "Lobby not found"}</p>
           <Button variant="outline" onClick={() => navigate("/")} className="font-display text-xs uppercase tracking-[0.15em] border-border text-muted-foreground hover:text-primary hover:border-primary/40">
@@ -307,7 +304,6 @@ const JoinLobby = () => {
 
   return (
     <div className="min-h-screen relative">
-      <StarField />
       <div className="relative z-10 max-w-2xl mx-auto px-4 py-12">
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
           <h1 className="font-display text-3xl md:text-4xl font-black tracking-[0.15em] text-primary text-glow mb-2">

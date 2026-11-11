@@ -5,7 +5,6 @@ import { ArrowLeft, Save, RotateCcw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import StarField from "@/components/StarField";
 import MapSetupHex from "@/components/MapSetupHex";
 import { supabase } from "@/integrations/supabase/client";
 import { useLobby } from "@/hooks/useLobby";
@@ -228,7 +227,6 @@ const MapEditor = () => {
 
   return (
     <div className="min-h-screen relative">
-      <StarField />
       <div className="relative z-10 max-w-5xl mx-auto px-4 py-8">
         <Button
           variant="ghost"

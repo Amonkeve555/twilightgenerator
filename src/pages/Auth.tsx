@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import StarField from "@/components/StarField";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { isNativePlatform } from "@/lib/platform";
@@ -106,7 +105,6 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen relative">
-      <StarField />
       <div className="relative z-10 max-w-md mx-auto px-4 py-12">
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
           <img src={tiEmblem} alt="Twilight Imperium Emblem" className="w-20 h-20 mx-auto mb-4 drop-shadow-[0_0_15px_hsl(42_85%_55%/0.3)]" />

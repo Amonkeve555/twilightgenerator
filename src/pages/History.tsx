@@ -4,7 +4,6 @@ import { ArrowLeft, Trash2, Trophy, Pencil } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import StarField from "@/components/StarField";
 import EditResultsDialog from "@/components/EditResultsDialog";
 import HistoryMiniMap from "@/components/HistoryMiniMap";
 import { formatDurationShort } from "@/components/GameTimer";
@@ -73,7 +72,6 @@ const History = () => {
 
   return (
     <div className="min-h-screen relative">
-      <StarField />
       <div className="relative z-10 max-w-2xl mx-auto px-4 py-12">
         {/* Header */}
         <motion.div

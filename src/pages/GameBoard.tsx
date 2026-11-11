@@ -5,7 +5,6 @@ import { ArrowLeft, Eraser, Flag, Play, Save, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import StarField from "@/components/StarField";
 import MapSetupHex, { type SeatOccupant } from "@/components/MapSetupHex";
 import TileControlLeaderboard from "@/components/TileControlLeaderboard";
 import GameTimer from "@/components/GameTimer";
@@ -213,7 +212,6 @@ const GameBoard = () => {
   if (loading) {
     return (
       <div className="min-h-screen relative">
-        <StarField />
         <div className="relative z-10 flex items-center justify-center min-h-screen">
           <p className="font-display text-primary text-glow">Loading...</p>
         </div>
@@ -224,7 +222,6 @@ const GameBoard = () => {
   if (error || !lobby) {
     return (
       <div className="min-h-screen relative">
-        <StarField />
         <div className="relative z-10 flex flex-col items-center justify-center min-h-screen gap-4">
           <p className="font-display text-destructive">{error || "Game not found"}</p>
           <Button
@@ -241,7 +238,6 @@ const GameBoard = () => {
 
   return (
     <div className="min-h-screen relative">
-      <StarField />
       <div className="relative z-10 max-w-6xl mx-auto px-4 py-10">
         <motion.div
           initial={{ opacity: 0, y: -20 }}

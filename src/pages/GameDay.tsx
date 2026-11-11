@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Trophy, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import StarField from "@/components/StarField";
 import FactionCard from "@/components/FactionCard";
 import GameTimer from "@/components/GameTimer";
 import MapSetupHex, { type SeatOccupant } from "@/components/MapSetupHex";
@@ -123,7 +122,6 @@ const GameDay = () => {
   if (loading) {
     return (
       <div className="min-h-screen relative">
-        <StarField />
         <div className="relative z-10 flex items-center justify-center min-h-screen">
           <p className="font-display text-primary text-glow">Loading...</p>
         </div>
@@ -134,7 +132,6 @@ const GameDay = () => {
   if (error || !lobby) {
     return (
       <div className="min-h-screen relative">
-        <StarField />
         <div className="relative z-10 flex flex-col items-center justify-center min-h-screen gap-4">
           <p className="font-display text-destructive">{error || "Lobby not found"}</p>
         </div>
@@ -144,7 +141,6 @@ const GameDay = () => {
 
   return (
     <div className="min-h-screen relative">
-      <StarField />
       <div className="relative z-10 max-w-2xl mx-auto px-4 py-12">
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
           <h1 className="font-display text-3xl md:text-4xl font-black tracking-[0.15em] text-primary text-glow mb-2">

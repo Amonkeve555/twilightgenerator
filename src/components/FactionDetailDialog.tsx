@@ -1,4 +1,5 @@
 import { Info, Check } from "lucide-react";
+import { motion } from "framer-motion";
 import {
   Dialog,
   DialogContent,
@@ -40,22 +41,40 @@ const FactionDetailDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="glass imperial-border max-w-lg max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent
+        className="glass imperial-border max-w-lg max-h-[85vh] overflow-y-auto"
+        style={{ boxShadow: `0 0 60px -12px hsl(${c} / 0.5), 0 0 0 1px hsl(${c} / 0.25)` }}
+      >
+        {/* Reveal flare in the faction's colour */}
+        <motion.div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-0 h-40"
+          initial={{ opacity: 0.9, scaleY: 1.4 }}
+          animate={{ opacity: 0.25, scaleY: 1 }}
+          transition={{ duration: 1.2, ease: "easeOut" }}
+          style={{ transformOrigin: "top", background: `radial-gradient(ellipse at 50% 0%, hsl(${c} / 0.45), transparent 70%)` }}
+        />
+        <DialogHeader className="relative">
           <div
-            className="absolute top-0 left-0 right-0 h-[2px] -mx-6 -mt-6"
+            className="absolute top-0 left-0 right-0 h-[2px] -mx-6 -mt-6 faction-bar"
             style={{
               background: `linear-gradient(90deg, transparent, hsl(${c}), transparent)`,
+              backgroundSize: "200% 100%",
             }}
           />
-          <DialogTitle
-            className="font-display text-xl tracking-wide pt-2 leading-tight break-words"
-            style={{
-              color: `hsl(${c})`,
-              textShadow: `0 0 12px hsl(${c} / 0.4)`,
-            }}
-          >
-            {faction.name}
+          <DialogTitle asChild>
+            <motion.h2
+              className="font-display text-xl tracking-wide pt-2 leading-tight break-words"
+              initial={{ opacity: 0, letterSpacing: "0.3em", filter: "blur(6px)" }}
+              animate={{ opacity: 1, letterSpacing: "0.025em", filter: "blur(0px)" }}
+              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              style={{
+                color: `hsl(${c})`,
+                textShadow: `0 0 16px hsl(${c} / 0.55)`,
+              }}
+            >
+              {faction.name}
+            </motion.h2>
           </DialogTitle>
         </DialogHeader>
 

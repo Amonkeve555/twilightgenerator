@@ -19,16 +19,27 @@ const FactionCard = ({ playerName, faction, index }: FactionCardProps) => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30, scale: 0.9 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ delay: index * 0.18, duration: 0.6, type: "spring" }}
-      className="glass imperial-border rounded p-5 relative overflow-hidden group"
+      // Card "flips" into view like a revealed token, with a flash of the faction colour
+      initial={{ opacity: 0, rotateY: -95, scale: 0.85 }}
+      animate={{ opacity: 1, rotateY: 0, scale: 1 }}
+      transition={{ delay: index * 0.18, type: "spring", stiffness: 110, damping: 14 }}
+      style={{ transformPerspective: 900, boxShadow: `0 0 28px -10px hsl(${faction.color} / 0.55)` }}
+      className="glass imperial-border rounded p-5 relative overflow-hidden group sheen card-lift"
     >
+      <motion.div
+        aria-hidden="true"
+        className="absolute inset-0 pointer-events-none"
+        initial={{ opacity: 0.7 }}
+        animate={{ opacity: 0 }}
+        transition={{ delay: index * 0.18 + 0.25, duration: 0.9, ease: "easeOut" }}
+        style={{ background: `radial-gradient(circle at 30% 50%, hsl(${faction.color} / 0.55), transparent 70%)` }}
+      />
       {/* Top accent bar with faction color */}
       <div
-        className="absolute top-0 left-0 right-0 h-[2px]"
+        className="absolute top-0 left-0 right-0 h-[2px] faction-bar"
         style={{
           background: `linear-gradient(90deg, transparent, hsl(${faction.color}), transparent)`,
+          backgroundSize: "200% 100%",
         }}
       />
 

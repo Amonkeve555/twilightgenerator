@@ -7,7 +7,6 @@ import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import StarField from "@/components/StarField";
 import { toast } from "sonner";
 
 type Citation = {
@@ -203,7 +202,6 @@ const RulesAssistant = () => {
 
   return (
     <div className="min-h-screen relative flex flex-col">
-      <StarField />
       <div className="relative z-10 flex flex-col flex-1 max-w-2xl mx-auto w-full px-4 py-6">
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-4">

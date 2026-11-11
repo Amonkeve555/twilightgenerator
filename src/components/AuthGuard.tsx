@@ -2,7 +2,6 @@ import { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
-import StarField from "./StarField";
 
 interface AuthGuardProps {
   children: ReactNode;
@@ -18,7 +17,6 @@ const AuthGuard = ({ children, requireProfile = true }: AuthGuardProps) => {
   if (authLoading || (user && profileLoading)) {
     return (
       <div className="min-h-screen relative">
-        <StarField />
         <div className="relative z-10 flex items-center justify-center min-h-screen">
           <p className="font-display text-primary text-glow">Loading...</p>
         </div>

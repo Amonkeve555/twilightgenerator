@@ -26,23 +26,28 @@ const TokenGrid = ({ totalTokens, takenTokens, players, onSelectToken, forbidden
           return (
             <motion.button
               key={id}
-              whileHover={!isDisabled ? { scale: 1.08, y: -2 } : undefined}
+              initial={{ opacity: 0, scale: 0.6, rotate: -8 }}
+              animate={{ opacity: 1, scale: 1, rotate: 0 }}
+              transition={{ delay: Math.min(id * 0.025, 0.6), type: "spring", stiffness: 260, damping: 18 }}
+              whileHover={!isDisabled ? { scale: 1.1, y: -3 } : undefined}
               whileTap={!isDisabled ? { scale: 0.95 } : undefined}
               onClick={() => !isDisabled && onSelectToken(id)}
               disabled={isDisabled}
               title={isForbidden ? "Faction you played last game" : undefined}
+              aria-label={isTaken ? `Token ${id}, taken by ${players[ownerIndex] ?? "another player"}` : isForbidden ? `Token ${id}, blocked` : `Token ${id}`}
               className={`aspect-square rounded font-display text-base font-bold flex items-center justify-center transition-all duration-200 border ${
                 isTaken
                   ? "bg-muted border-border opacity-30 cursor-not-allowed"
                   : isForbidden
                   ? "bg-muted border-destructive/40 opacity-40 cursor-not-allowed text-destructive"
-                  : "bg-secondary border-border hover:border-primary/60 hover:glow-primary cursor-pointer text-primary"
+                  : "token-idle sheen bg-secondary border-border hover:border-primary/60 hover:glow-primary cursor-pointer text-primary"
               }`}
               style={
                 !isDisabled
                   ? {
                       backgroundImage:
                         "linear-gradient(135deg, hsl(230 25% 14%) 0%, hsl(230 30% 11%) 100%)",
+                      animationDelay: `${(id * 0.37) % 4}s`,
                     }
                   : undefined
               }
