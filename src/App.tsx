@@ -63,7 +63,7 @@ const App = () => {
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/profile-setup" element={<AuthGuard requireProfile={false}><ProfileSetup /></AuthGuard>} />
           <Route path="/factions" element={<FactionGuide />} />
-          <Route path="/rules" element={<RulesAssistant />} />
+          <Route path="/rules" element={<AuthGuard><RulesAssistant /></AuthGuard>} />
           <Route path="/map-setup" element={<MapSetup />} />
           <Route path="/history" element={<AuthGuard><History /></AuthGuard>} />
           <Route path="/stats" element={<AuthGuard><Stats /></AuthGuard>} />

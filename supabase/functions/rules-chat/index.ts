@@ -68,8 +68,27 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { messages } = await req.json();
-    if (!Array.isArray(messages) || messages.length === 0) {
+    // Require a signed-in user (the anon/publishable key alone is not enough).
+    const token = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
+    const { data: userRes } = token
+      ? await createClient(SUPABASE_URL, ANON_KEY).auth.getUser(token)
+      : { data: { user: null } };
+    if (!userRes?.user) {
+      return new Response(JSON.stringify({ error: "sign_in_required" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const body = await req.json();
+    // Only accept user/assistant turns with plain text (no injected system prompts),
+    // and cap history size to keep cost bounded.
+    const messages = (Array.isArray(body?.messages) ? body.messages : [])
+      .filter((m: { role?: unknown; content?: unknown }) =>
+        (m?.role === "user" || m?.role === "assistant") && typeof m?.content === "string")
+      .slice(-20)
+      .map((m: { role: string; content: string }) => ({ role: m.role, content: m.content.slice(0, 4000) }));
+    if (messages.length === 0) {
       return new Response(JSON.stringify({ error: "messages required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
