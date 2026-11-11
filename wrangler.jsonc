@@ -1,0 +1,12 @@
+// Cloudflare Workers static-assets deploy. Having this file stops `wrangler deploy`
+// from trying to auto-configure Vite (which needs Vite 6+).
+// "name" must match the Worker name in the Cloudflare dashboard.
+{
+  "name": "twilightgenerator",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist",
+    // Serve index.html for client-side routes like /lobby/TI4-ABCD
+    "not_found_handling": "single-page-application"
+  }
+}
