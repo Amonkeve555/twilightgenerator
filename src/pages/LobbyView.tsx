@@ -363,7 +363,9 @@ const LobbyView = () => {
                 Resume Picking Your Faction
               </Button>
             )}
-            {myPlayer && myPicksDone && !locked && !lobby?.started_at && (
+            {/* Free pick: change faction. Token draft: draws are final, but with
+                several drafted races you can still switch which one you play. */}
+            {myPlayer && myPicksDone && !locked && !lobby?.started_at && (isFreeMode || picksPerPlayer > 1) && (
               <Button
                 onClick={() => navigate(`/join/${inviteCode}`)}
                 variant="outline"
@@ -371,7 +373,7 @@ const LobbyView = () => {
                 className="font-display text-sm uppercase tracking-[0.2em] px-8 py-5 border-primary/40 text-primary hover:bg-primary/10"
               >
                 <RotateCcw className="mr-2 h-4 w-4" />
-                Change My Faction
+                {isFreeMode ? "Change My Faction" : "Choose My Race"}
               </Button>
             )}
             <Button

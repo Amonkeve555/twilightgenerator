@@ -294,7 +294,13 @@ const JoinLobby = () => {
     }
     const result = data as { success?: boolean; error?: string };
     if (result?.error) {
-      toast.error(result.error === "locked" ? "Picks are locked (within 3 days of game)" : result.error);
+      toast.error(
+        result.error === "locked"
+          ? "Picks are locked (within 3 days of game)"
+          : result.error === "no_reroll"
+          ? "Token draws are final — no re-rolls"
+          : result.error
+      );
       return;
     }
     setTokenPicks([]);
@@ -538,7 +544,8 @@ const JoinLobby = () => {
             )}
 
             <div className="flex flex-col items-center gap-3">
-              {!locked && (
+              {/* Token draws are final (no re-rolls); only free-pick lobbies can change. */}
+              {!locked && isFreeMode && (
                 <Button
                   onClick={changePick}
                   variant="outline"
