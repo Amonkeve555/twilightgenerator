@@ -1,0 +1,1 @@
+ALTER TABLE public.lobbies DROP CONSTRAINT lobbies_status_check; ALTER TABLE public.lobbies ADD CONSTRAINT lobbies_status_check CHECK (status = ANY (ARRAY['waiting'::text, 'ready'::text, 'in_progress'::text, 'completed'::text]));

@@ -1,0 +1,1 @@
+UPDATE public.rules_sources SET status='pending', error=NULL, chunk_count=0 WHERE status IN ('processing','error');

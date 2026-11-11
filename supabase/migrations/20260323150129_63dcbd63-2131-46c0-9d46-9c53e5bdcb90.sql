@@ -1,0 +1,1 @@
+ALTER TABLE public.lobbies ADD COLUMN host_password text NOT NULL DEFAULT '';

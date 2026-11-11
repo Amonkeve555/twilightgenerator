@@ -1,0 +1,1 @@
+ALTER TABLE public.lobbies ADD COLUMN IF NOT EXISTS custom_map jsonb;
