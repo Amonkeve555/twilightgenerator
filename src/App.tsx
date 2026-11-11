@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
@@ -11,22 +11,22 @@ import AuthGuard from "@/components/AuthGuard";
 import { isNativePlatform } from "@/lib/platform";
 import { handleAuthDeepLink } from "@/lib/nativeAuth";
 import Index from "./pages/Index.tsx";
-import History from "./pages/History.tsx";
-import CreateLobby from "./pages/CreateLobby.tsx";
-import JoinLobby from "./pages/JoinLobby.tsx";
-import LobbyView from "./pages/LobbyView.tsx";
-import GameDay from "./pages/GameDay.tsx";
-import GameBoard from "./pages/GameBoard.tsx";
-import MyLobbies from "./pages/MyLobbies.tsx";
-import FactionGuide from "./pages/FactionGuide.tsx";
-import RulesAssistant from "./pages/RulesAssistant.tsx";
-import MapSetup from "./pages/MapSetup.tsx";
-import MapEditor from "./pages/MapEditor.tsx";
-import Stats from "./pages/Stats.tsx";
+const History = lazy(() => import("./pages/History.tsx"));
+const CreateLobby = lazy(() => import("./pages/CreateLobby.tsx"));
+const JoinLobby = lazy(() => import("./pages/JoinLobby.tsx"));
+const LobbyView = lazy(() => import("./pages/LobbyView.tsx"));
+const GameDay = lazy(() => import("./pages/GameDay.tsx"));
+const GameBoard = lazy(() => import("./pages/GameBoard.tsx"));
+const MyLobbies = lazy(() => import("./pages/MyLobbies.tsx"));
+const FactionGuide = lazy(() => import("./pages/FactionGuide.tsx"));
+const RulesAssistant = lazy(() => import("./pages/RulesAssistant.tsx"));
+const MapSetup = lazy(() => import("./pages/MapSetup.tsx"));
+const MapEditor = lazy(() => import("./pages/MapEditor.tsx"));
+const Stats = lazy(() => import("./pages/Stats.tsx"));
 import Auth from "./pages/Auth.tsx";
-import AuthCallback from "./pages/AuthCallback.tsx";
-import ProfileSetup from "./pages/ProfileSetup.tsx";
-import Admin from "./pages/Admin.tsx";
+const AuthCallback = lazy(() => import("./pages/AuthCallback.tsx"));
+const ProfileSetup = lazy(() => import("./pages/ProfileSetup.tsx"));
+const Admin = lazy(() => import("./pages/Admin.tsx"));
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -52,6 +52,15 @@ function useNativeAuthDeepLink() {
 }
 
 
+/** Shown while a lazily-loaded page's code downloads. */
+function PageLoading() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <p className="font-display text-primary text-glow">Loading...</p>
+    </div>
+  );
+}
+
 /** Route switch with a soft fade/rise between pages (star field stays put behind). */
 function AnimatedRoutes() {
   const location = useLocation();
@@ -66,6 +75,7 @@ function AnimatedRoutes() {
         exit={reduce ? undefined : { opacity: 0, y: -8 }}
         transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
       >
+        <Suspense fallback={<PageLoading />}>
         <Routes location={location}>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
@@ -88,6 +98,7 @@ function AnimatedRoutes() {
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </Suspense>
       </motion.div>
     </AnimatePresence>
   );

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import SeatingPanel from "@/components/SeatingPanel";
+import GameDayReveal from "@/components/GameDayReveal";
 import GameTimer from "@/components/GameTimer";
 import { supabase } from "@/integrations/supabase/client";
 import { useLobby, type LobbySettings } from "@/hooks/useLobby";
@@ -316,6 +317,8 @@ const LobbyView = () => {
               </AnimatePresence>
             )}
           </div>
+
+          <GameDayReveal lobbyId={lobby.id} players={players} revealed={revealed} />
 
           <SeatingPanel
             lobbyId={lobby.id}

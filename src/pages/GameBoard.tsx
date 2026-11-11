@@ -184,24 +184,26 @@ const GameBoard = () => {
     }
 
     setSaving(true);
-    for (const p of players) {
+    const results = players.map((p) => {
       const data = resultData.get(p.id);
-      if (!data) continue;
-      const vp = data.vp ? parseInt(data.vp, 10) : null;
-      const rank = parseInt(data.rank, 10);
-      await supabase
-        .from("lobby_players")
-        .update({
-          vp: vp !== null && !Number.isNaN(vp) ? vp : null,
-          rank,
-        })
-        .eq("id", p.id);
-    }
-    await supabase
-      .from("lobbies")
-      .update({ status: "completed" })
-      .eq("id", lobby.id);
+      const vp = data?.vp ? parseInt(data.vp, 10) : null;
+      return {
+        player_id: p.id,
+        vp: vp !== null && !Number.isNaN(vp) ? vp : null,
+        rank: parseInt(data?.rank ?? "", 10),
+      };
+    });
+    // One transaction: all results + game marked completed, or nothing.
+    const { data, error: err } = await supabase.rpc("finish_game", {
+      p_lobby_id: lobby.id,
+      p_results: results,
+    });
     setSaving(false);
+    if (err || (data as { error?: string } | null)?.error) {
+      toast.error("Failed to save results — nothing was saved, please try again");
+      console.error(err ?? data);
+      return;
+    }
     toast.success("Results saved!");
   };
 
@@ -290,6 +292,7 @@ const GameBoard = () => {
               seatOrder={seatOrder}
               tileControl={tileControl}
               onTileClick={canEdit ? onTileClick : undefined}
+              hiddenSeats={!revealed && !isHost}
             />
             {canEdit && (
               <div className="flex flex-wrap justify-center gap-2 mt-4">

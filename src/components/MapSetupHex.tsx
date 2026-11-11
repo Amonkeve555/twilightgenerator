@@ -46,6 +46,8 @@ interface Props {
   neutral?: boolean;
   /** Render a faint snap grid of empty hexes within `range` axial distance of origin, behind real tiles. */
   gridGuide?: { range: number };
+  /** Seating is secret (before game day): show "?" on home seats instead of "open". */
+  hiddenSeats?: boolean;
 }
 
 // Flat-top hex axial -> pixel
@@ -66,7 +68,7 @@ function hexPoints(cx: number, cy: number, size: number) {
   return pts.join(" ");
 }
 
-const MapSetupHex = ({ setup, seats, seatOrder, onSeatClick, compact, tileControl, onTileClick, neutral, gridGuide }: Props) => {
+const MapSetupHex = ({ setup, seats, seatOrder, onSeatClick, compact, tileControl, onTileClick, neutral, gridGuide, hiddenSeats }: Props) => {
   const HEX_SIZE = compact ? 18 : 34;
 
   // Map from "q,r" -> seat_index for quick lookup
@@ -284,7 +286,7 @@ const MapSetupHex = ({ setup, seats, seatOrder, onSeatClick, compact, tileContro
     const seatIdx = seatIndexByCoord.get(`${c.q},${c.r}`);
     if (seatIdx === undefined) return "";
     const occ = seats?.[seatIdx];
-    if (!occ) return "open";
+    if (!occ) return hiddenSeats ? "?" : "open";
     return occ.playerName.length > 8 ? occ.playerName.slice(0, 8) + "…" : occ.playerName;
   };
 
@@ -297,7 +299,7 @@ const MapSetupHex = ({ setup, seats, seatOrder, onSeatClick, compact, tileContro
         if (occ) {
           return `Seat ${seatIdx + 1} — ${occ.playerName}${occ.factionName ? ` · ${occ.factionName}` : ""}`;
         }
-        return `Seat ${seatIdx + 1} — open`;
+        return hiddenSeats ? `Seat ${seatIdx + 1} — revealed on game day` : `Seat ${seatIdx + 1} — open`;
       }
       return `Player ${c.player} — ${base}`;
     }

@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { TablesUpdate } from "@/integrations/supabase/types";
 import type { CustomMap } from "@/lib/customMap";
 
 export interface MapTemplate {
@@ -36,9 +37,9 @@ export async function updateTemplate(
   id: string,
   patch: { name?: string; data?: CustomMap },
 ): Promise<void> {
-  const update: Record<string, unknown> = {};
+  const update: TablesUpdate<"map_templates"> = {};
   if (patch.name !== undefined) update.name = patch.name;
-  if (patch.data !== undefined) update.data = patch.data;
+  if (patch.data !== undefined) update.data = patch.data as never;
   const { error } = await supabase.from("map_templates").update(update).eq("id", id);
   if (error) throw error;
 }

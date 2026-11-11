@@ -12,6 +12,19 @@ export default defineConfig(() => ({
     },
   },
   plugins: [react()],
+  build: {
+    rollupOptions: {
+      output: {
+        // Split big libraries into their own chunks: they download in parallel
+        // and stay cached across app deploys (they rarely change).
+        manualChunks: {
+          react: ["react", "react-dom", "react-router-dom"],
+          supabase: ["@supabase/supabase-js"],
+          motion: ["framer-motion"],
+        },
+      },
+    },
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

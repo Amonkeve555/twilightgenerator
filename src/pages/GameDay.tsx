@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Trophy, Save } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import FactionCard from "@/components/FactionCard";
@@ -84,26 +85,29 @@ const GameDay = () => {
   };
 
   const saveResults = async () => {
-    setSaving(true);
-    for (const p of players) {
+    if (!lobby) return;
+    const results = players.map((p) => {
       const data = resultData.get(p.id);
-      if (data) {
-        await supabase
-          .from("lobby_players")
-          .update({
-            vp: data.vp ? parseInt(data.vp) : null,
-            rank: data.rank ? parseInt(data.rank) : null,
-          })
-          .eq("id", p.id);
-      }
-    }
-    // Stamp ended_at via RPC (host-only) before marking completed
-    await supabase.rpc("end_game", { p_lobby_id: lobby!.id });
-    await supabase
-      .from("lobbies")
-      .update({ status: "completed" })
-      .eq("id", lobby!.id);
+      const vp = data?.vp ? parseInt(data.vp, 10) : null;
+      const rank = data?.rank ? parseInt(data.rank, 10) : null;
+      return {
+        player_id: p.id,
+        vp: vp !== null && !Number.isNaN(vp) ? vp : null,
+        rank: rank !== null && !Number.isNaN(rank) ? rank : null,
+      };
+    });
+    setSaving(true);
+    // One transaction: all results + game marked completed, or nothing.
+    const { data, error: err } = await supabase.rpc("finish_game", {
+      p_lobby_id: lobby.id,
+      p_results: results,
+    });
     setSaving(false);
+    if (err || (data as { error?: string } | null)?.error) {
+      toast.error("Failed to save results — nothing was saved, please try again");
+      console.error(err ?? data);
+      return;
+    }
     navigate(`/lobby/${inviteCode}`);
   };
 

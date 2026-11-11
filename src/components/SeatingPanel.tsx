@@ -156,6 +156,7 @@ const SeatingPanel = ({ lobbyId, players, isHost, playerCount, customMap, reveal
               seatOrder={seatOrder}
               onSeatClick={isHost ? handleSeatClick : undefined}
               neutral
+              hiddenSeats={hiddenFromMe}
             />
           </div>
 

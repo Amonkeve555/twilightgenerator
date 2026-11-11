@@ -379,6 +379,10 @@ export type Database = {
       clear_seats: { Args: { p_lobby_id: string }; Returns: Json }
       clear_tile_control: { Args: { p_lobby_id: string }; Returns: Json }
       end_game: { Args: { p_lobby_id: string }; Returns: Json }
+      finish_game: {
+        Args: { p_lobby_id: string; p_results: Json }
+        Returns: Json
+      }
       get_forbidden_tokens: { Args: { p_lobby_id: string }; Returns: number[] }
       get_last_played_faction_vs_opponents: {
         Args: { p_opponent_ids: string[]; p_user_id: string }
