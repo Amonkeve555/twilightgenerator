@@ -379,6 +379,10 @@ export type Database = {
       clear_seats: { Args: { p_lobby_id: string }; Returns: Json }
       clear_tile_control: { Args: { p_lobby_id: string }; Returns: Json }
       end_game: { Args: { p_lobby_id: string }; Returns: Json }
+      pick_my_seat: {
+        Args: { p_lobby_id: string; p_seat_index: number | null }
+        Returns: Json
+      }
       finish_game: {
         Args: { p_lobby_id: string; p_results: Json }
         Returns: Json

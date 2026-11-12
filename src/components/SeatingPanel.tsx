@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Shuffle, Eraser, ChevronDown, ChevronUp, Armchair, EyeOff } from "lucide-react";
+import { isLocked } from "@/lib/lobbyLock";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +29,8 @@ interface Props {
   /** Game day reached / game started — seating is public */
   revealed: boolean;
   gameDate?: string | null;
+  /** The viewer's own player row id (null if they haven't joined) */
+  myPlayerId?: string | null;
 }
 
 function clampCount(n: number): PlayerCount {
@@ -36,7 +39,7 @@ function clampCount(n: number): PlayerCount {
   return n as PlayerCount;
 }
 
-const SeatingPanel = ({ lobbyId, players, isHost, playerCount, customMap, revealed, gameDate }: Props) => {
+const SeatingPanel = ({ lobbyId, players, isHost, playerCount, customMap, revealed, gameDate, myPlayerId }: Props) => {
   const [open, setOpen] = useState(true);
   const [busy, setBusy] = useState(false);
   const [activeSeat, setActiveSeat] = useState<number | null>(null);
@@ -48,9 +51,19 @@ const SeatingPanel = ({ lobbyId, players, isHost, playerCount, customMap, reveal
     [customMap, setup, count],
   );
 
-  // Seat -> occupant map. Empty for non-hosts until the game-day reveal.
-  const seats = useMemo(() => buildSeats(players, { revealed, isHost }), [players, revealed, isHost]);
+  // Seat -> occupant map. Until the game-day reveal a player sees only their own seat.
+  const seats = useMemo(
+    () => buildSeats(players, { revealed, isHost, viewerPlayerId: myPlayerId }),
+    [players, revealed, isHost, myPlayerId],
+  );
   const hiddenFromMe = !revealed && !isHost;
+  // Players choose their own seat until the pick lock (the host seats anyone, any time).
+  const canPickOwn = !isHost && !!myPlayerId && !revealed && !isLocked(gameDate);
+  const mySeat = useMemo(() => {
+    const me = players.find((p) => p.id === myPlayerId);
+    return me?.seat_index ?? null;
+  }, [players, myPlayerId]);
+  const [pickSeat, setPickSeat] = useState<number | null>(null);
   const revealLabel = formatRevealDate(gameDate);
 
   const unseatedPlayers = useMemo(
@@ -109,9 +122,32 @@ const SeatingPanel = ({ lobbyId, players, isHost, playerCount, customMap, reveal
     toast.success("Seats cleared");
   };
 
+  const pickMySeat = async (seatIndex: number | null) => {
+    setBusy(true);
+    const { data, error } = await supabase.rpc("pick_my_seat", {
+      p_lobby_id: lobbyId,
+      p_seat_index: seatIndex,
+    });
+    setBusy(false);
+    setPickSeat(null);
+    const err = error ? "failed" : (data as { error?: string } | null)?.error;
+    if (err) {
+      toast.error(
+        err === "seat_taken"
+          ? "Someone already sits there — pick another seat"
+          : err === "locked"
+          ? "Seats are locked (within 3 days of the game)"
+          : "Couldn't save your seat",
+      );
+      if (error) console.error(error);
+      return;
+    }
+    toast.success(seatIndex === null ? "You left your seat" : `You're in seat ${seatIndex + 1}`);
+  };
+
   const handleSeatClick = (seatIndex: number) => {
-    if (!isHost) return;
-    setActiveSeat(seatIndex);
+    if (isHost) setActiveSeat(seatIndex);
+    else if (canPickOwn) setPickSeat(seatIndex);
   };
 
   const seatedCount = Object.keys(seats).length;
@@ -129,7 +165,11 @@ const SeatingPanel = ({ lobbyId, players, isHost, playerCount, customMap, reveal
             Table Seating
           </h2>
           <span className="font-body text-xs text-muted-foreground">
-            {hiddenFromMe ? "secret" : `${seatedCount}/${count} seated`}
+            {hiddenFromMe
+              ? mySeat !== null
+                ? `you: seat ${mySeat + 1}`
+                : "secret"
+              : `${seatedCount}/${count} seated`}
           </span>
         </div>
         {open ? (
@@ -146,15 +186,15 @@ const SeatingPanel = ({ lobbyId, players, isHost, playerCount, customMap, reveal
               <EyeOff className="h-3 w-3" />
               {isHost
                 ? `Only you can see the seating. Everyone sees it on game day${revealLabel ? ` (${revealLabel})` : ""}.`
-                : `Seating is revealed on game day${revealLabel ? ` (${revealLabel})` : ""}.`}
+                : `You see only your own seat. Everyone's seats are revealed on game day${revealLabel ? ` (${revealLabel})` : ""}.`}
             </p>
           )}
-          <div className={`rounded bg-secondary/30 p-2 md:p-3 ${hiddenFromMe ? "opacity-60" : ""}`}>
+          <div className={`rounded bg-secondary/30 p-2 md:p-3 ${hiddenFromMe && !canPickOwn ? "opacity-60" : ""}`}>
             <MapSetupHex
               setup={setup}
               seats={seats}
               seatOrder={seatOrder}
-              onSeatClick={isHost ? handleSeatClick : undefined}
+              onSeatClick={isHost || canPickOwn ? handleSeatClick : undefined}
               neutral
               hiddenSeats={hiddenFromMe}
             />
@@ -251,10 +291,55 @@ const SeatingPanel = ({ lobbyId, players, isHost, playerCount, customMap, reveal
             </Dialog>
           )}
 
+          {canPickOwn && (
+            <Dialog open={pickSeat !== null} onOpenChange={(o) => { if (!o) setPickSeat(null); }}>
+              <DialogContent className="max-w-sm">
+                <DialogHeader>
+                  <DialogTitle className="font-display text-sm uppercase tracking-[0.2em] text-primary">
+                    Seat {pickSeat !== null ? pickSeat + 1 : ""}
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-2">
+                  {pickSeat !== null && pickSeat === mySeat ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full font-body text-sm"
+                      onClick={() => pickMySeat(null)}
+                      disabled={busy}
+                    >
+                      Leave this seat
+                    </Button>
+                  ) : (
+                    <>
+                      <p className="font-body text-xs text-muted-foreground">
+                        Other players' seats are secret, so this one may already be taken.
+                      </p>
+                      <Button
+                        size="sm"
+                        className="w-full font-display text-xs uppercase tracking-[0.15em] glow-primary bg-primary text-primary-foreground hover:bg-primary/90"
+                        onClick={() => pickSeat !== null && pickMySeat(pickSeat)}
+                        disabled={busy}
+                      >
+                        {mySeat !== null ? `Move here from seat ${mySeat + 1}` : "Sit here"}
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+
           <p className="font-body text-xs text-muted-foreground/70 text-center italic">
             {isHost
               ? "Click a home system on the map to seat a player. Seats are saved with the game."
-              : "Only the host can change seating."}
+              : canPickOwn
+              ? "Tap a home system to choose your seat. You can change it until picks lock."
+              : !myPlayerId
+              ? "Join the lobby to choose a seat."
+              : revealed
+              ? "Only the host can change seating."
+              : "Seats are locked. Only the host can change seating now."}
           </p>
         </>
       )}

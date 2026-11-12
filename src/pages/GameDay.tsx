@@ -47,7 +47,8 @@ const GameDay = () => {
     [lobby?.custom_map, setup, playerCount],
   );
   const tileControl = (lobby?.tile_control ?? {}) as Record<string, number>;
-  const seats = useMemo(() => buildSeats(players, { revealed, isHost }), [players, revealed, isHost]);
+  const myPlayerId = players.find((p) => p.user_id === user?.id)?.id ?? null;
+  const seats = useMemo(() => buildSeats(players, { revealed, isHost, viewerPlayerId: myPlayerId }), [players, revealed, isHost, myPlayerId]);
   const totalClaimableTiles = useMemo(
     () => setup.cells.filter((c) => c.role !== "hyperlane").length,
     [setup]

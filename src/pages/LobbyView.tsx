@@ -328,6 +328,7 @@ const LobbyView = () => {
             customMap={lobby.custom_map}
             revealed={revealed}
             gameDate={lobby.game_date}
+            myPlayerId={myPlayer?.id ?? null}
           />
 
           {isHost && (

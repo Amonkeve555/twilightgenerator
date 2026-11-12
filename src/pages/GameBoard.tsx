@@ -48,7 +48,8 @@ const GameBoard = () => {
   const tileControl = (lobby?.tile_control ?? {}) as Record<string, number>;
 
   const revealed = isRevealed(lobby);
-  const seats = useMemo(() => buildSeats(players, { revealed, isHost }), [players, revealed, isHost]);
+  const myPlayerId = players.find((p) => p.user_id === user?.id)?.id ?? null;
+  const seats = useMemo(() => buildSeats(players, { revealed, isHost, viewerPlayerId: myPlayerId }), [players, revealed, isHost, myPlayerId]);
   // Before game day, hide chosen races (and seats, for non-hosts) from the leaderboard too.
   const visiblePlayers = useMemo(
     () =>
