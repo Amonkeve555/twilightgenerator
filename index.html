@@ -2,6 +2,18 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // Force https: on plain http browsers disable crypto.randomUUID & co.
+      // (insecure context) and the app can't load lobbies. Links shared
+      // without "https://" (e.g. in WhatsApp) open as http.
+      (function () {
+        var h = location.hostname;
+        var local = h === "localhost" || h === "127.0.0.1" || h === "[::1]" || /\.localhost$/.test(h);
+        if (location.protocol === "http:" && !local) {
+          location.replace("https:" + location.href.slice(location.protocol.length));
+        }
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TI4 Imperial Companion</title>
     <meta name="description" content="Create Twilight Imperium lobbies, draft factions, build maps, run game day, and record results.">

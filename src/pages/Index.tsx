@@ -70,7 +70,8 @@ const Index = () => {
   const [finalAssignments, setFinalAssignments] = useState<{ player: string; faction: Faction }[]>([]);
 
   const { user: authUser, loading: authLoading } = useAuth();
-  const [lobbiesError, setLobbiesError] = useState(false);
+  // Holds the failure reason so players can read it out when reporting a problem.
+  const [lobbiesError, setLobbiesError] = useState<string | null>(null);
   const [lobbiesReload, setLobbiesReload] = useState(0);
   const authUserId = authUser?.id ?? null;
 
@@ -81,7 +82,7 @@ const Index = () => {
     if (!authUserId) {
       // Lobbies are only readable when signed in.
       setActiveLobbies([]);
-      setLobbiesError(false);
+      setLobbiesError(null);
       setLobbiesLoading(false);
       return;
     }
@@ -90,7 +91,7 @@ const Index = () => {
 
     const fetchActiveLobbies = async () => {
       setLobbiesLoading(true);
-      setLobbiesError(false);
+      setLobbiesError(null);
       const sessionId = getSessionId();
 
       const { data: allLobbies, error: lobbiesErr } = await supabase
@@ -141,7 +142,9 @@ const Index = () => {
       })
       .catch((err) => {
         console.error("Failed to load lobbies", err);
-        if (!cancelled) setLobbiesError(true);
+        const e = err as { message?: string; code?: string; hint?: string } | null;
+        const detail = [e?.code, e?.message].filter(Boolean).join(" ") || String(err);
+        if (!cancelled) setLobbiesError(detail.slice(0, 200));
       })
       .finally(() => {
         if (!cancelled) setLobbiesLoading(false);
@@ -338,6 +341,7 @@ const Index = () => {
                 ) : lobbiesError ? (
                   <div className="glass imperial-border rounded p-4 text-center space-y-3">
                     <p className="font-body text-sm text-muted-foreground">Couldn't load lobbies — check your connection.</p>
+                    <p className="font-mono text-[11px] text-muted-foreground/70 break-words">{lobbiesError}</p>
                     <Button
                       variant="outline"
                       size="sm"

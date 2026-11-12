@@ -1,3 +1,4 @@
+import { randomId } from "@/lib/uuid";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Trophy, Save } from "lucide-react";
@@ -34,7 +35,7 @@ const ResultsEntry = ({ assignments, onSave, onSkip }: ResultsEntryProps) => {
     }));
 
     const game: GameRecord = {
-      id: crypto.randomUUID(),
+      id: randomId(),
       date: new Date().toISOString(),
       players,
     };
