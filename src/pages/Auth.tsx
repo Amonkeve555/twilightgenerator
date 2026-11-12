@@ -10,6 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { isNativePlatform } from "@/lib/platform";
 import { signInWithProviderNative } from "@/lib/nativeAuth";
+import { isInAppBrowser, getMobileOS, openInBrowserHref } from "@/lib/inAppBrowser";
+import { ExternalLink, Copy } from "lucide-react";
 import tiEmblem from "@/assets/ti-emblem.png";
 
 const emailSchema = z.string().trim().email({ message: "Invalid email address" }).max(255);
@@ -73,6 +75,21 @@ const Auth = () => {
         toast.error(error.message);
         return;
       }
+    }
+  };
+
+  // Chat/social apps' built-in browsers: send people to the real browser,
+  // keeping the page they were heading to (e.g. a lobby invite link).
+  const inApp = isInAppBrowser();
+  const os = getMobileOS();
+  const targetUrl = `${window.location.origin}${from}`;
+  const openHref = inApp ? openInBrowserHref(targetUrl, os) : null;
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(targetUrl);
+      toast.success("Link copied — paste it into your browser");
+    } catch {
+      toast.error(targetUrl);
     }
   };
 
@@ -183,6 +200,38 @@ const Auth = () => {
               >
                 Sign in with Apple
               </Button>
+            </div>
+          ) : inApp ? (
+            // Google blocks sign-in inside chat apps' built-in browsers (400 "malformed" error).
+            <div className="rounded border border-amber-500/40 bg-amber-500/10 p-4 space-y-3 text-center">
+              <p className="font-body text-sm text-amber-300">
+                Google sign-in doesn't work inside this app's built-in browser.
+                Open the page in {os === "ios" ? "Safari" : "your browser"} to continue with Google.
+              </p>
+              {openHref && (
+                <Button
+                  asChild
+                  className="w-full font-display text-sm uppercase tracking-[0.15em] glow-primary bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                  <a href={openHref}>
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    Open in {os === "ios" ? "Safari" : "Browser"}
+                  </a>
+                </Button>
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={copyLink}
+                className="w-full font-display text-xs uppercase tracking-[0.15em] border-border text-muted-foreground hover:text-primary hover:border-primary/40"
+              >
+                <Copy className="mr-2 h-3 w-3" />
+                Copy link
+              </Button>
+              <p className="font-body text-xs text-muted-foreground">
+                Or tap the <span className="text-foreground">⋯</span> menu and choose
+                {" "}“Open in {os === "ios" ? "Safari" : "browser"}”. Email sign-in above works here too.
+              </p>
             </div>
           ) : (
             <Button
