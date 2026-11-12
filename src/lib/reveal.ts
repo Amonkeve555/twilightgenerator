@@ -46,19 +46,24 @@ export function getVisibleFaction(p: LobbyPlayerRow, revealed: boolean): Faction
 
 /**
  * Seat -> occupant map for the hex overlay.
- * Until the reveal, a player sees only their own seat and the host sees all
- * of them; nobody sees a hidden faction choice on the map.
+ * Until the reveal, a player sees their own seat and which other seats are
+ * taken (not by whom); the host sees everyone. Nobody sees a hidden faction
+ * choice on the map.
  */
 export function buildSeats(
   players: LobbyPlayerRow[],
   opts: { revealed: boolean; isHost: boolean; viewerPlayerId?: string | null },
 ): Record<number, SeatOccupant> {
   const m: Record<number, SeatOccupant> = {};
-  // Before the reveal a player only sees their own seat; the host sees all.
+  // Before the reveal a player sees who sits only in their own seat; the host sees all.
   const onlyMine = !opts.revealed && !opts.isHost;
   for (const p of players) {
     if (p.seat_index === null || p.seat_index === undefined) continue;
-    if (onlyMine && p.id !== opts.viewerPlayerId) continue;
+    if (onlyMine && p.id !== opts.viewerPlayerId) {
+      // Show that the seat is taken, but not by whom.
+      m[p.seat_index] = { playerId: "", playerName: "Taken", factionColor: null, anonymous: true };
+      continue;
+    }
     const f = getVisibleFaction(p, opts.revealed);
     m[p.seat_index] = {
       playerId: p.id,

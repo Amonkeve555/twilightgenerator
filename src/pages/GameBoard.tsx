@@ -293,7 +293,6 @@ const GameBoard = () => {
               seatOrder={seatOrder}
               tileControl={tileControl}
               onTileClick={canEdit ? onTileClick : undefined}
-              hiddenSeats={!revealed && !isHost}
             />
             {canEdit && (
               <div className="flex flex-wrap justify-center gap-2 mt-4">

@@ -146,8 +146,16 @@ const SeatingPanel = ({ lobbyId, players, isHost, playerCount, customMap, reveal
   };
 
   const handleSeatClick = (seatIndex: number) => {
-    if (isHost) setActiveSeat(seatIndex);
-    else if (canPickOwn) setPickSeat(seatIndex);
+    if (isHost) {
+      setActiveSeat(seatIndex);
+      return;
+    }
+    if (!canPickOwn) return;
+    if (seats[seatIndex]?.anonymous) {
+      toast.error("That seat is already taken — pick an open one");
+      return;
+    }
+    setPickSeat(seatIndex);
   };
 
   const seatedCount = Object.keys(seats).length;
@@ -165,11 +173,9 @@ const SeatingPanel = ({ lobbyId, players, isHost, playerCount, customMap, reveal
             Table Seating
           </h2>
           <span className="font-body text-xs text-muted-foreground">
-            {hiddenFromMe
-              ? mySeat !== null
-                ? `you: seat ${mySeat + 1}`
-                : "secret"
-              : `${seatedCount}/${count} seated`}
+            {hiddenFromMe && mySeat !== null
+              ? `you: seat ${mySeat + 1} · ${seatedCount}/${count} taken`
+              : `${seatedCount}/${count} ${hiddenFromMe ? "taken" : "seated"}`}
           </span>
         </div>
         {open ? (
@@ -186,7 +192,7 @@ const SeatingPanel = ({ lobbyId, players, isHost, playerCount, customMap, reveal
               <EyeOff className="h-3 w-3" />
               {isHost
                 ? `Only you can see the seating. Everyone sees it on game day${revealLabel ? ` (${revealLabel})` : ""}.`
-                : `You see only your own seat. Everyone's seats are revealed on game day${revealLabel ? ` (${revealLabel})` : ""}.`}
+                : `Taken seats are greyed out; who sits where is revealed on game day${revealLabel ? ` (${revealLabel})` : ""}.`}
             </p>
           )}
           <div className={`rounded bg-secondary/30 p-2 md:p-3 ${hiddenFromMe && !canPickOwn ? "opacity-60" : ""}`}>
@@ -196,7 +202,6 @@ const SeatingPanel = ({ lobbyId, players, isHost, playerCount, customMap, reveal
               seatOrder={seatOrder}
               onSeatClick={isHost || canPickOwn ? handleSeatClick : undefined}
               neutral
-              hiddenSeats={hiddenFromMe}
             />
           </div>
 
@@ -312,9 +317,6 @@ const SeatingPanel = ({ lobbyId, players, isHost, playerCount, customMap, reveal
                     </Button>
                   ) : (
                     <>
-                      <p className="font-body text-xs text-muted-foreground">
-                        Other players' seats are secret, so this one may already be taken.
-                      </p>
                       <Button
                         size="sm"
                         className="w-full font-display text-xs uppercase tracking-[0.15em] glow-primary bg-primary text-primary-foreground hover:bg-primary/90"
@@ -334,7 +336,7 @@ const SeatingPanel = ({ lobbyId, players, isHost, playerCount, customMap, reveal
             {isHost
               ? "Click a home system on the map to seat a player. Seats are saved with the game."
               : canPickOwn
-              ? "Tap a home system to choose your seat. You can change it until picks lock."
+              ? "Tap an open home system to choose your seat. You can change it until picks lock."
               : !myPlayerId
               ? "Join the lobby to choose a seat."
               : revealed

@@ -26,6 +26,8 @@ export interface SeatOccupant {
   /** HSL string fragment, e.g. "42 85% 55%" — used as faction color */
   factionColor?: string | null;
   factionName?: string;
+  /** Someone sits here but who is secret until game day (shown as "taken"). */
+  anonymous?: boolean;
 }
 
 interface Props {
@@ -46,8 +48,6 @@ interface Props {
   neutral?: boolean;
   /** Render a faint snap grid of empty hexes within `range` axial distance of origin, behind real tiles. */
   gridGuide?: { range: number };
-  /** Seating is secret (before game day): show "?" on home seats instead of "open". */
-  hiddenSeats?: boolean;
 }
 
 // Flat-top hex axial -> pixel
@@ -68,7 +68,7 @@ function hexPoints(cx: number, cy: number, size: number) {
   return pts.join(" ");
 }
 
-const MapSetupHex = ({ setup, seats, seatOrder, onSeatClick, compact, tileControl, onTileClick, neutral, gridGuide, hiddenSeats }: Props) => {
+const MapSetupHex = ({ setup, seats, seatOrder, onSeatClick, compact, tileControl, onTileClick, neutral, gridGuide }: Props) => {
   const HEX_SIZE = compact ? 18 : 34;
 
   // Map from "q,r" -> seat_index for quick lookup
@@ -155,6 +155,16 @@ const MapSetupHex = ({ setup, seats, seatOrder, onSeatClick, compact, tileContro
         };
       }
       if (c.role === "home") {
+        const seatIdx = seatIndexByCoord.get(`${c.q},${c.r}`);
+        if (seatIdx !== undefined && seats?.[seatIdx]?.anonymous) {
+          // Taken by someone else (identity secret): greyed out.
+          return {
+            fill: "hsl(220 10% 28% / 0.6)",
+            stroke: "hsl(220 10% 50%)",
+            strokeWidth: 1.5,
+            strokeDasharray: "4 3",
+          };
+        }
         return {
           fill: "hsl(42 70% 45% / 0.35)",
           stroke: "hsl(42 85% 55%)",
@@ -286,7 +296,8 @@ const MapSetupHex = ({ setup, seats, seatOrder, onSeatClick, compact, tileContro
     const seatIdx = seatIndexByCoord.get(`${c.q},${c.r}`);
     if (seatIdx === undefined) return "";
     const occ = seats?.[seatIdx];
-    if (!occ) return hiddenSeats ? "?" : "open";
+    if (!occ) return "open";
+    if (occ.anonymous) return "taken";
     return occ.playerName.length > 8 ? occ.playerName.slice(0, 8) + "…" : occ.playerName;
   };
 
@@ -296,10 +307,11 @@ const MapSetupHex = ({ setup, seats, seatOrder, onSeatClick, compact, tileContro
       const seatIdx = seatIndexByCoord.get(`${c.q},${c.r}`);
       if (seatIdx !== undefined) {
         const occ = seats?.[seatIdx];
+        if (occ?.anonymous) return `Seat ${seatIdx + 1} — taken (revealed on game day)`;
         if (occ) {
           return `Seat ${seatIdx + 1} — ${occ.playerName}${occ.factionName ? ` · ${occ.factionName}` : ""}`;
         }
-        return hiddenSeats ? `Seat ${seatIdx + 1} — revealed on game day` : `Seat ${seatIdx + 1} — open`;
+        return `Seat ${seatIdx + 1} — open`;
       }
       return `Player ${c.player} — ${base}`;
     }
