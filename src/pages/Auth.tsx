@@ -27,7 +27,10 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const stateFrom = (location.state as { from?: string } | null)?.from;
+  const stateFrom =
+    (location.state as { from?: string } | null)?.from ??
+    new URLSearchParams(location.search).get("next") ??
+    undefined;
   const from = stateFrom?.startsWith("/") && !stateFrom.startsWith("//") ? stateFrom : "/";
 
   const native = isNativePlatform();

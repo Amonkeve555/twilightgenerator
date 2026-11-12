@@ -25,7 +25,11 @@ const AuthGuard = ({ children, requireProfile = true }: AuthGuardProps) => {
   }
 
   if (!user) {
-    return <Navigate to="/auth" state={{ from: location.pathname + location.search }} replace />;
+    // Carry the target page in the URL too: history state can be lost on a
+    // refresh or inside chat apps' browsers, which sent people to the home page
+    // instead of the lobby they were invited to.
+    const from = location.pathname + location.search;
+    return <Navigate to={`/auth?next=${encodeURIComponent(from)}`} state={{ from }} replace />;
   }
 
   if (requireProfile && (!profile || !profile.nickname)) {

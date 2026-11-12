@@ -1,7 +1,8 @@
-import { lazy, Suspense, useEffect } from "react";
+import { Suspense, useEffect } from "react";
+import { lazyWithReload as lazy } from "@/lib/lazyWithReload";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import StarField from "@/components/StarField";
 import { toast } from "sonner";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -61,18 +62,19 @@ function PageLoading() {
   );
 }
 
-/** Route switch with a soft fade/rise between pages (star field stays put behind). */
+/** Route switch with a soft fade/rise into each page (star field stays put behind). */
 function AnimatedRoutes() {
   const location = useLocation();
   const reduce = useReducedMotion();
   return (
-    <AnimatePresence mode="wait" initial={false}>
-      <motion.div
+    // Enter-only fade. No AnimatePresence exit: with mode="wait", an instant
+    // redirect (e.g. invite link -> /auth when signed out) left the old, empty
+    // page "exiting" forever and the new page never mounted -> blank screen.
+    <motion.div
         key={location.pathname}
         // opacity/translate only: a lingering filter/transform would break position:fixed children
         initial={reduce ? false : { opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        exit={reduce ? undefined : { opacity: 0, y: -8 }}
         transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
       >
         <Suspense fallback={<PageLoading />}>
@@ -100,7 +102,6 @@ function AnimatedRoutes() {
         </Routes>
         </Suspense>
       </motion.div>
-    </AnimatePresence>
   );
 }
 
