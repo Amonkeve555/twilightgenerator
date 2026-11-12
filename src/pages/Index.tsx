@@ -17,6 +17,7 @@ import type { LobbySettings } from "@/hooks/useLobby";
 import UserMenu from "@/components/UserMenu";
 import ClaimGuestDataDialog from "@/components/ClaimGuestDataDialog";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useAuth } from "@/hooks/useAuth";
 import { formatGameDate, formatTimeUntilLock, isLocked } from "@/lib/lobbyLock";
 
 interface ActiveLobby {
@@ -68,46 +69,63 @@ const Index = () => {
   const [choosingPlayerIndex, setChoosingPlayerIndex] = useState(0);
   const [finalAssignments, setFinalAssignments] = useState<{ player: string; faction: Faction }[]>([]);
 
+  const { user: authUser, loading: authLoading } = useAuth();
+  const [lobbiesError, setLobbiesError] = useState(false);
+  const [lobbiesReload, setLobbiesReload] = useState(0);
+  const authUserId = authUser?.id ?? null;
+
+  // Load lobbies once sign-in is known, and again whenever the signed-in user
+  // changes (e.g. the session is restored a moment after the page opens).
   useEffect(() => {
+    if (authLoading) return;
+    if (!authUserId) {
+      // Lobbies are only readable when signed in.
+      setActiveLobbies([]);
+      setLobbiesError(false);
+      setLobbiesLoading(false);
+      return;
+    }
+    let cancelled = false;
+    const userId = authUserId;
+
     const fetchActiveLobbies = async () => {
+      setLobbiesLoading(true);
+      setLobbiesError(false);
       const sessionId = getSessionId();
 
-      const { data: allLobbies } = await supabase
+      const { data: allLobbies, error: lobbiesErr } = await supabase
         .from("lobbies")
         .select("*")
         .neq("status", "completed")
         .order("created_at", { ascending: false });
+      if (lobbiesErr) throw lobbiesErr;
 
       if (!allLobbies || allLobbies.length === 0) {
-        setActiveLobbies([]);
-        setLobbiesLoading(false);
-        return;
+        return [] as ActiveLobby[];
       }
 
-      const { data: { user } } = await supabase.auth.getUser();
-
-      const { data: myMemberships } = user
-        ? await supabase
-            .from("lobby_players")
-            .select("lobby_id")
-            .or(`user_id.eq.${user.id},session_id.eq.${sessionId}`)
-        : await supabase.from("lobby_players").select("lobby_id").eq("session_id", sessionId);
+      const { data: myMemberships, error: memErr } = await supabase
+        .from("lobby_players")
+        .select("lobby_id")
+        .or(`user_id.eq.${userId},session_id.eq.${sessionId}`);
+      if (memErr) throw memErr;
 
       const joinedSet = new Set((myMemberships ?? []).map((m) => m.lobby_id));
 
       const lobbyIds = allLobbies.map((l) => l.id);
-      const { data: counts } = await supabase
+      const { data: counts, error: countErr } = await supabase
         .from("lobby_players")
         .select("lobby_id")
         .in("lobby_id", lobbyIds);
+      if (countErr) throw countErr;
 
       const countMap: Record<string, number> = {};
       (counts ?? []).forEach((c) => {
         countMap[c.lobby_id] = (countMap[c.lobby_id] ?? 0) + 1;
       });
 
-      const merged: ActiveLobby[] = allLobbies.map((l) => {
-        const isHost = (user && l.host_user_id === user.id) || l.host_session_id === sessionId;
+      return allLobbies.map((l) => {
+        const isHost = l.host_user_id === userId || l.host_session_id === sessionId;
         return {
           ...l,
           settings: l.settings as unknown as LobbySettings,
@@ -115,12 +133,23 @@ const Index = () => {
           player_count: countMap[l.id] ?? 0,
         };
       });
-
-      setActiveLobbies(merged);
-      setLobbiesLoading(false);
     };
-    fetchActiveLobbies();
-  }, []);
+
+    fetchActiveLobbies()
+      .then((merged) => {
+        if (!cancelled) setActiveLobbies(merged);
+      })
+      .catch((err) => {
+        console.error("Failed to load lobbies", err);
+        if (!cancelled) setLobbiesError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setLobbiesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, authUserId, lobbiesReload]);
 
   const availableFactions = useMemo(() => {
     return [...TI4_FACTIONS, ...(includePok ? POK_FACTIONS : [])].filter(
@@ -306,6 +335,30 @@ const Index = () => {
                 </h2>
                 {lobbiesLoading ? (
                   <p className="text-center font-body text-muted-foreground text-sm">Loading...</p>
+                ) : lobbiesError ? (
+                  <div className="glass imperial-border rounded p-4 text-center space-y-3">
+                    <p className="font-body text-sm text-muted-foreground">Couldn't load lobbies — check your connection.</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setLobbiesReload((n) => n + 1)}
+                      className="font-display text-xs uppercase tracking-[0.15em] border-primary/40 text-primary hover:bg-primary/10"
+                    >
+                      <RotateCcw className="mr-2 h-3 w-3" />
+                      Retry
+                    </Button>
+                  </div>
+                ) : !authUser ? (
+                  <div className="glass imperial-border rounded p-4 text-center space-y-3">
+                    <p className="font-body text-sm text-muted-foreground">Sign in to see and join lobbies.</p>
+                    <Button
+                      size="sm"
+                      onClick={() => navigate("/auth")}
+                      className="font-display text-xs uppercase tracking-[0.15em] glow-primary bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
+                      Sign In
+                    </Button>
+                  </div>
                 ) : activeLobbies.length === 0 ? (
                   <div className="glass imperial-border rounded p-4 text-center">
                     <p className="font-body text-sm text-muted-foreground">No active lobbies. Create one to get started!</p>
