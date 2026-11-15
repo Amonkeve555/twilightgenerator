@@ -107,6 +107,11 @@ const FactionDetailDialog = ({
                 Starting Tech
               </h3>
               <p className="text-foreground/90">
+                {faction.startingTechChoose && (
+                  <span className="text-muted-foreground">
+                    Choose {faction.startingTechChoose}:{" "}
+                  </span>
+                )}
                 {faction.startingTech.join(", ")}
               </p>
             </section>
@@ -118,6 +123,36 @@ const FactionDetailDialog = ({
                 Commodities
               </h3>
               <p className="text-foreground/90">{faction.commodities}</p>
+            </section>
+          )}
+
+          {(faction.flagship || faction.mech || (faction.factionUnits?.length ?? 0) > 0) && (
+            <section>
+              <h3 className="font-display text-xs uppercase tracking-[0.2em] text-primary mb-2">
+                Faction Units
+              </h3>
+              <ul className="space-y-2">
+                {[
+                  faction.flagship && { label: "Flagship", unit: faction.flagship },
+                  faction.mech && { label: "Mech", unit: faction.mech },
+                  ...(faction.factionUnits ?? []).map((u) => ({ label: u.replaces ?? "Unit", unit: u })),
+                ]
+                  .filter((x): x is { label: string; unit: NonNullable<Faction["flagship"]> } => !!x)
+                  .map(({ label, unit }) => (
+                    <li key={unit.name}>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-foreground">{unit.name}</span>
+                        <Badge variant="outline" className="capitalize">
+                          {label}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">{unit.stats}</p>
+                      {unit.description && (
+                        <p className="text-foreground/80 text-xs mt-0.5">{unit.description}</p>
+                      )}
+                    </li>
+                  ))}
+              </ul>
             </section>
           )}
 
@@ -137,7 +172,7 @@ const FactionDetailDialog = ({
                         variant="outline"
                         className={techTypeColors[t.type] ?? ""}
                       >
-                        {t.type}
+                        {t.type === "none" ? "no color" : t.type}
                       </Badge>
                       {t.prerequisites && (
                         <span className="text-xs text-muted-foreground">
@@ -157,14 +192,14 @@ const FactionDetailDialog = ({
           {faction.agent && (
             <section>
               <h3 className="font-display text-xs uppercase tracking-[0.2em] text-primary mb-1">
-                Agent
+                {faction.additionalAgents?.length ? "Agents" : "Agent"}
               </h3>
-              <p>
-                <span className="font-semibold">{faction.agent.name}</span> —{" "}
-                <span className="text-foreground/80">
-                  {faction.agent.description}
-                </span>
-              </p>
+              {[faction.agent, ...(faction.additionalAgents ?? [])].map((a) => (
+                <p key={a.name} className="mb-1 last:mb-0">
+                  <span className="font-semibold">{a.name}</span> —{" "}
+                  <span className="text-foreground/80">{a.description}</span>
+                </p>
+              ))}
             </section>
           )}
 

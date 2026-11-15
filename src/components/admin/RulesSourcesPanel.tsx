@@ -251,15 +251,18 @@ const RulesSourcesPanel = () => {
                   )}
                 </div>
                 <div className="flex gap-2 flex-shrink-0">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={busyId === s.id || s.status === "processing"}
-                    onClick={() => onReingest(s)}
-                    className="font-display text-xs uppercase tracking-[0.15em]"
-                  >
-                    <RefreshCw className="mr-1 h-3 w-3" /> Re-ingest
-                  </Button>
+                  {/* Curated sources are loaded by scripts/load-rules-kb.mjs, not from a PDF. */}
+                  {!s.storage_path.startsWith("curated/") && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={busyId === s.id || s.status === "processing"}
+                      onClick={() => onReingest(s)}
+                      className="font-display text-xs uppercase tracking-[0.15em]"
+                    >
+                      <RefreshCw className="mr-1 h-3 w-3" /> Re-ingest
+                    </Button>
+                  )}
                   <Button
                     size="sm"
                     variant="outline"

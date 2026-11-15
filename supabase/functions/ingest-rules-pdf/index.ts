@@ -82,7 +82,9 @@ function chunkPages(pages: string[]): Chunk[] {
       });
     }
     if (cut >= combined.length) break;
-    start = Math.max(cut - OVERLAP_CHARS, cut);
+    // Step back so consecutive chunks share OVERLAP_CHARS of text. cut is always
+    // >= start + 0.6 * TARGET_CHARS here, so this still moves forward.
+    start = cut - OVERLAP_CHARS;
   }
   return chunks;
 }
@@ -172,6 +174,14 @@ Deno.serve(async (req) => {
     if (srcErr || !src) {
       return new Response(JSON.stringify({ error: "source_not_found" }), {
         status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Curated sources have no PDF; re-ingesting would wipe their chunks.
+    if (String(src.storage_path).startsWith("curated/")) {
+      return new Response(JSON.stringify({ error: "curated_source" }), {
+        status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

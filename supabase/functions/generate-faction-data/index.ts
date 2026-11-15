@@ -52,7 +52,7 @@ const PROPOSAL_SCHEMA = {
         type: "object",
         properties: {
           name: { type: "string" },
-          type: { type: "string", enum: ["unit", "green", "blue", "yellow", "red"] },
+          type: { type: "string", enum: ["unit", "green", "blue", "yellow", "red", "none"] },
           prerequisites: { type: "string" },
           description: { type: "string" },
         },

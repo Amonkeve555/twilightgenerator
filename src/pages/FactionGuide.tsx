@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, ChevronDown, ChevronUp, ArrowLeft, Swords, Shield, Cpu, Package, Lightbulb, FileText, Zap, User, Crown, Star } from "lucide-react";
+import { Search, ChevronDown, ChevronUp, ArrowLeft, Swords, Shield, Cpu, Package, Lightbulb, FileText, Zap, User, Crown, Star, Rocket } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ const TECH_TYPE_LABELS: Record<string, string> = {
   blue: "Propulsion",
   yellow: "Cybernetic",
   red: "Warfare",
+  none: "No color",
 };
 
 const FactionDetail = ({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) => (
@@ -128,9 +129,34 @@ const FactionGuideCard = ({ faction, onDetailClick }: { faction: Faction; onDeta
                 </FactionDetail>
               )}
 
+              {(faction.flagship || faction.mech || (faction.factionUnits?.length ?? 0) > 0) && (
+                <FactionDetail icon={<Rocket className="h-4 w-4" />} label="Faction Units">
+                  <div className="space-y-2">
+                    {[
+                      faction.flagship && { label: "Flagship", unit: faction.flagship },
+                      faction.mech && { label: "Mech", unit: faction.mech },
+                      ...(faction.factionUnits ?? []).map((u) => ({ label: u.replaces ?? "Unit", unit: u })),
+                    ]
+                      .filter((x): x is { label: string; unit: NonNullable<Faction["flagship"]> } => !!x)
+                      .map(({ label, unit }) => (
+                        <div key={unit.name} className="text-sm">
+                          <p>
+                            <span className="font-semibold text-primary">{unit.name}</span>{" "}
+                            <span className="text-xs uppercase tracking-wider text-muted-foreground">({label})</span>
+                          </p>
+                          <p className="text-xs text-muted-foreground">{unit.stats}</p>
+                          {unit.description && <p className="text-foreground/80">{unit.description}</p>}
+                        </div>
+                      ))}
+                  </div>
+                </FactionDetail>
+              )}
+
               {faction.agent && (
-                <FactionDetail icon={<User className="h-4 w-4" />} label="Agent">
-                  <p className="text-sm"><span className="font-semibold text-primary">{faction.agent.name}</span> — {faction.agent.description}</p>
+                <FactionDetail icon={<User className="h-4 w-4" />} label={faction.additionalAgents?.length ? "Agents" : "Agent"}>
+                  {[faction.agent, ...(faction.additionalAgents ?? [])].map((a) => (
+                    <p key={a.name} className="text-sm mb-1 last:mb-0"><span className="font-semibold text-primary">{a.name}</span> — {a.description}</p>
+                  ))}
                 </FactionDetail>
               )}
 
@@ -177,7 +203,10 @@ const FactionGuideCard = ({ faction, onDetailClick }: { faction: Faction; onDeta
               )}
 
               {faction.startingTech && faction.startingTech.length > 0 && (
-                <FactionDetail icon={<Cpu className="h-4 w-4" />} label="Starting Tech">
+                <FactionDetail
+                  icon={<Cpu className="h-4 w-4" />}
+                  label={faction.startingTechChoose ? `Starting Tech (choose ${faction.startingTechChoose})` : "Starting Tech"}
+                >
                   <div className="flex flex-wrap gap-2">
                     {faction.startingTech.map((t) => {
                       const genTech = GENERIC_TECH[t];
