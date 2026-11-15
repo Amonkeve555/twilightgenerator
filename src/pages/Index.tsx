@@ -1,3 +1,4 @@
+import { shuffle } from "@/lib/shuffle";
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { RotateCcw, Scroll, Users, Gamepad2, BookOpen, Bot, BarChart3, Trophy, Shield, Hexagon } from "lucide-react";
@@ -163,7 +164,7 @@ const Index = () => {
   const canStart = availableFactions.length >= players.length * picksPerPlayer;
 
   const startDraft = useCallback(() => {
-    const shuffled = [...availableFactions].sort(() => Math.random() - 0.5);
+    const shuffled = shuffle(availableFactions);
     const mapping = new Map<number, Faction>();
     shuffled.forEach((f, i) => mapping.set(i + 1, f));
 

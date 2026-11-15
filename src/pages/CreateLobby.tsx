@@ -1,3 +1,4 @@
+import { shuffle } from "@/lib/shuffle";
 import { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -73,7 +74,7 @@ const CreateLobby = () => {
 
     let tokenMapping: Record<string, Faction> | null = null;
     if (!isFree) {
-      const shuffled = [...availableFactions].sort(() => Math.random() - 0.5);
+      const shuffled = shuffle(availableFactions);
       tokenMapping = {};
       shuffled.forEach((f, i) => (tokenMapping![String(i + 1)] = f));
     }
