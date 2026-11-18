@@ -147,11 +147,14 @@ export function useLobby(inviteCode: string | undefined) {
     const draftMode = settings?.draft_mode ?? "token";
     const isFreeMode = draftMode === "free" || draftMode === "free_no_repeat";
     const picksPerPlayer = settings?.picks_per_player ?? 1;
-    // Missing tokens, or drafted options but no race chosen -> auto-pick at lock.
+    // Missing tokens (or, in free mode, no race) -> auto-assign at lock.
+    // Which drafted race to play is chosen on game day, not auto-picked;
+    // only a lone option is set, since there is nothing to choose.
     const incomplete = players.some((p) =>
       isFreeMode
         ? !p.chosen_faction
-        : (p.token_picks?.length ?? 0) < picksPerPlayer || !p.chosen_faction
+        : (p.token_picks?.length ?? 0) < picksPerPlayer ||
+          (!p.chosen_faction && (p.assigned_factions?.length ?? 0) === 1)
     );
     if (!incomplete) return;
     autoAssignedRef.current = true;

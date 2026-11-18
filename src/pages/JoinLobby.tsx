@@ -509,8 +509,8 @@ const JoinLobby = () => {
                   {!chosenName && (
                     <p className="text-center font-body text-xs text-amber-400">
                       {locked
-                        ? "Not chosen — a race is being picked for you at random."
-                        : "Not chosen yet — if you don't choose before picks lock, one is picked for you at random."}
+                        ? "Not chosen yet — you can still choose here or on game day."
+                        : "Not chosen yet — you can choose now or on game day."}
                     </p>
                   )}
                 </div>
